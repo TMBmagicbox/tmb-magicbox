@@ -2295,6 +2295,25 @@
 </div>
 
 
+<!-- LIGHTBOX -->
+<div id="lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.95);align-items:center;justify-content:center;flex-direction:column;padding:1.5rem">
+  <button onclick="closeLightbox()" style="position:absolute;top:1.2rem;right:1.2rem;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center">✕</button>
+  <div style="max-width:1000px;width:100%;max-height:75vh;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden">
+    <img id="lbImg" src="" alt="" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:6px"/>
+    <iframe id="lbFrame" src="" style="display:none;width:100%;height:75vh;border:none;border-radius:6px" allow="autoplay" allowfullscreen></iframe>
+  </div>
+  <div style="margin-top:1rem;text-align:center">
+    <div id="lbCat" style="font-size:0.58rem;font-weight:500;letter-spacing:0.25em;text-transform:uppercase;color:#5F9EA0;margin-bottom:0.3rem"></div>
+    <div id="lbName" style="font-family:'Montserrat',sans-serif;font-size:0.95rem;font-weight:300;color:#fff"></div>
+  </div>
+  <div style="display:flex;gap:0.8rem;margin-top:1.2rem">
+    <button onclick="lbPrev()" style="font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:none;border:1px solid rgba(255,255,255,0.12);padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer">← Anterior</button>
+    <button onclick="closeLightbox()" style="font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:none;border:1px solid rgba(255,255,255,0.12);padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer">✕ Cerrar</button>
+    <button onclick="lbNext()" style="font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.5);background:none;border:1px solid rgba(255,255,255,0.12);padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer">Siguiente →</button>
+  </div>
+</div>
+
+
 <!-- ── FOOTER ── -->
 <footer>
   <a href="#hero" class="footer-brand">
@@ -2512,8 +2531,8 @@
     if (ytBtn) ytBtn.style.display = 'none';
     clearTimeout(window._videoTimeout);
   }
-  document.getElementById('videoModal').addEventListener('click', function(e) {
-    if (e.target === this) closeVideo();
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'videoModal') closeVideo();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
 
@@ -2657,8 +2676,8 @@
     document.body.style.overflow = document.getElementById('portfolioModal').classList.contains('open') ? 'hidden' : '';
   }
 
-  document.getElementById('lightbox').addEventListener('click', e => {
-    if (e.target.id === 'lightbox') closeLightbox();
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'lightbox') closeLightbox();
   });
 
   // ══ SCROLL REVEAL ══

@@ -843,21 +843,69 @@
 
     /* ════════════ CONTACT ════════════ */
     .contact-section {
-      padding: 7rem 4vw;
+      padding: 5.5rem 4vw 5rem;
       border-top: 1px solid rgba(255,255,255,0.07);
     }
 
-    .contact-inner {
-      max-width: 640px;
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(2rem, 4vw, 4.5rem);
+      align-items: center;
+      max-width: 1160px;
       margin: 0 auto;
-      text-align: center;
     }
 
-    .contact-inner > p {
+    .contact-visual {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+
+    .contact-visual::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      width: 78%;
+      height: 58%;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(ellipse at center,
+        rgba(46, 232, 214, 0.20) 0%,
+        rgba(95, 158, 160, 0.12) 40%,
+        transparent 72%);
+      filter: blur(16px);
+      pointer-events: none;
+    }
+
+    .contact-mascot {
+      position: relative;
+      z-index: 1;
+      display: block;
+      width: min(100%, 440px);
+      height: auto;
+      aspect-ratio: 9 / 16;
+      -webkit-mask-image: radial-gradient(ellipse 84% 90% at 50% 47%, #000 62%, transparent 100%);
+      mask-image: radial-gradient(ellipse 84% 90% at 50% 47%, #000 62%, transparent 100%);
+    }
+
+    .contact-panel {
+      min-width: 0;
+    }
+
+    .contact-panel .section-heading {
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+
+    .contact-lead {
       font-size: 0.88rem;
       line-height: 1.9;
       color: var(--gray1);
-      margin-bottom: 3rem;
+      margin-bottom: 2rem;
     }
 
     .contact-form {
@@ -1295,6 +1343,23 @@
       .pi, .pi-wide, .pi-tall { grid-column: span 1; grid-row: span 1; }
       .about-inner { grid-template-columns: 1fr; }
       .about-visual { height: 260px; }
+      .contact-section { padding: 4.25rem 4vw 4.5rem; }
+      .contact-layout {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+        justify-items: center;
+      }
+      .contact-mascot {
+        width: auto;
+        height: min(38vh, 340px);
+        max-width: 72vw;
+      }
+      .contact-panel {
+        width: 100%;
+        max-width: 640px;
+        text-align: center;
+      }
+      .contact-panel .section-heading { text-align: center; }
     }
 
     @media (max-width: 580px) {
@@ -1712,10 +1777,23 @@
 
 <!-- ── CONTACTO ── -->
 <section id="contacto" class="contact-section">
-  <div class="contact-inner">
+  <div class="contact-layout">
+    <figure class="contact-visual reveal">
+      <img
+        class="contact-mascot"
+        src="assets/boxi-neon-hex.webp"
+        alt="Boxi Bugs, mascota de Magic Box, con el hexágono TMB en neón"
+        width="720"
+        height="1280"
+        loading="lazy"
+        decoding="async"
+      >
+    </figure>
+
+    <div class="contact-panel">
     <p class="section-label reveal">Contacto</p>
-    <h2 class="section-heading reveal" style="margin-bottom:1rem"><strong>Hablemos</strong><br>de tu proyecto.</h2>
-    <p class="reveal">Cuéntanos qué necesitas y te respondemos en menos de 24 horas con una propuesta a la medida.</p>
+    <h2 class="section-heading reveal"><strong>Hablemos</strong><br>de tu proyecto.</h2>
+    <p class="reveal contact-lead">Cuéntanos qué necesitas y te respondemos en menos de 24 horas con una propuesta a la medida.</p>
 
     <form class="contact-form reveal" id="contactForm" action="https://formspree.io/f/mnjkdoqy" method="POST" onsubmit="handleSubmit(event)">
       <div class="f-row">
@@ -1764,6 +1842,7 @@
       <!-- Actualiza este número y email con los reales -->
       <a href="mailto:ventas@tmbmagicbox.studio">Email</a>
       <a href="https://wa.me/529985592883" target="_blank">WhatsApp</a>
+    </div>
     </div>
   </div>
 </section>

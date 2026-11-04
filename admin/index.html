@@ -78,7 +78,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
 .cal .d .n{color:var(--mut);font-size:11px}.cal .ev2{display:block;margin-top:2px;padding:2px 4px;border-radius:5px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#222}
 .p-instagram{background:#3a1430!important;color:#ff8fd0}.p-facebook{background:#0f1f3a!important;color:#7cb4ff}.p-tiktok{background:#0c2a27!important;color:#4fe6d8}
 .wk .d{min-height:120px}.plist .card{cursor:pointer}
-.s-idea{background:#222;color:#c9c9c9;border-color:#333}.s-borrador{background:#2e2410;color:#f5c451;border-color:#4a3a18}.s-programado{background:#0f1f3a;color:#7cb4ff;border-color:#1c355e}.s-publicado{background:#0f2a18;color:#6ee79a;border-color:#1a4528}.s-cancelado{background:#2e1414;color:#ff8a80;border-color:#4a2020}
+.s-idea{background:#222;color:#c9c9c9;border-color:#333}.s-borrador{background:#2e2410;color:#f5c451;border-color:#4a3a18}.s-listo{background:#0c2a27;color:#4fe6d8;border-color:#154540}.pub{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pub button{padding:14px 10px;font-size:15px}.pub .full{grid-column:1/-1}.pub .alt{background:var(--card2);color:var(--ink);border:1px solid var(--line)}.it .cap{color:var(--mut);font-size:12px;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.s-programado{background:#0f1f3a;color:#7cb4ff;border-color:#1c355e}.s-publicado{background:#0f2a18;color:#6ee79a;border-color:#1a4528}.s-cancelado{background:#2e1414;color:#ff8a80;border-color:#4a2020}
 .mx{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.mx input{padding:9px 6px;text-align:center}
 @media(min-width:760px){.dash{grid-template-columns:repeat(4,1fr)}.cal .d{min-height:90px}.cal .ev2{font-size:11px}}
 
@@ -122,7 +122,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
 
 <main id="app" hidden>
   <div class="dash" id="dash"></div>
-  <div class="next"><h3>⏰ Hoy toca y próximos 7 días</h3><div class="row" id="nx"></div></div>
+  <div class="next"><h3>⏰ Hoy toca y próximos 7 días</h3><div class="row" id="nx"></div><div id="nxpw"><h3 style="margin-top:12px">📣 Hoy toca publicar</h3><div class="row" id="nxp"></div></div></div>
   <div class="tabs">
     <button class="tab on" data-t="cliente">Clientes <span class="n" id="nc">0</span></button>
     <button class="tab" data-t="prospecto">Prospectos <span class="n" id="np">0</span></button>
@@ -151,7 +151,7 @@ const KL={mensaje_whatsapp:"💬 WhatsApp",email:"✉️ Email",respuesta:"↩�
 const PJS={cotizado:"Cotizado",anticipo:"Anticipo pagado",en_produccion:"En producción",entregado:"Entregado",pagado:"Pagado completo",cancelado:"Cancelado"};
 const PKGS=["Arranque ($7,500)","Promo Pro ($16,000)","Magic Mensual ($14,500/mes)","Toma con dron ($3,500)","Solo edición (desde $1,500)","Logo ($6,500)","Otro"];
 const PLAT={instagram:"Instagram",facebook:"Facebook",tiktok:"TikTok"};
-const PST={idea:"Idea",borrador:"Borrador",programado:"Programado",publicado:"Publicado",cancelado:"Cancelado"};
+const PST={idea:"Idea",borrador:"Borrador",listo:"Listo",programado:"Programado",publicado:"Publicado",cancelado:"Cancelado"};
 const PIL={detras_de_camaras:"🎬 Detrás de cámaras",antes_despues:"✨ Antes / después",resultados_clientes:"📈 Resultados de clientes",tips_negocios:"💡 Tips para negocios",boxi_bunny:"🐰 Boxi Bunny"};
 const FIELDS=[["business_name","Negocio"],["category","Giro"],["contact_name","Contacto"],["whatsapp","WhatsApp (10 dígitos)"],["email","Email"],["instagram","Instagram"],["website","Sitio web"],["zone","Zona / dirección"],["recommended_package","Paquete recomendado"],["estimated_value_mxn","Valor estimado (MXN)","number"],["landing_url","Página personalizada"],["batch","Tanda","number"],["cliente_desde","Cliente desde","date"],["whatsapp_message","Mensaje de WhatsApp (se pre-llena al tocar WhatsApp)","area"],["pitch_idea","Idea de pitch","area"],["why_prospect","¿Por qué es prospecto?","area"],["notes","Notas","area"]];
 const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -237,6 +237,7 @@ function render(){
   <div class="funnel">${ST.prospecto.map(s=>`<span class="pill s-${s}" onclick="jump('${s}')">${SL[s]} · ${pros.filter(c=>c.status==s).length}</span>`).join("")}</div>`;
  const t=today(),lim=plusDays(7),nx=pending().filter(a=>a.next_date<=lim).sort((a,b)=>a.next_date.localeCompare(b.next_date));
  $("#nx").innerHTML=nx.length?nx.map(a=>{const c=C.find(x=>x.id==a.contact_id)||{};const cl=a.next_date<t?"over":a.next_date==t?"today":"";return `<div class="it ${cl}" onclick="openC('${a.contact_id}')"><b>${a.next_date<t?"Atrasado · ":a.next_date==t?"Hoy · ":""}${fd(a.next_date)}</b> · ${esc(c.business_name||"")}<br>${esc(a.next_step||a.summary)}</div>`}).join(""):`<div class="empty">Nada pendiente esta semana. ¡A prospectar! 🚀</div>`;
+ $("#nxp").innerHTML=postStrip();$("#nxpw").hidden=tab=="calendario";
  $("#crmv").hidden=tab=="calendario";$("#calv").hidden=tab!="calendario";if(tab=="calendario")return renderCal();
  const fs=$("#fs"),keep=fs.dataset.t==tab?fs.value:"";fs.dataset.t=tab;fs.innerHTML=`<option value="">Todos los estatus</option>`+ST[tab].map(s=>`<option value="${s}">${SL[s]}</option>`).join("");fs.value=keep;
  $("#addc").textContent=tab=="cliente"?"+ Agregar cliente":"+ Agregar prospecto";
@@ -317,6 +318,16 @@ async function pjPaid(id,v){const p=P.find(x=>x.id==id);if(await db.up("projects
 const DW=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"],dkey=d=>d.toLocaleDateString("en-CA");
 function postsOn(k){return S.filter(s=>s.scheduled_at&&dkey(new Date(s.scheduled_at))==k).sort((a,b)=>a.scheduled_at.localeCompare(b.scheduled_at))}
 function evs(k){return postsOn(k).map(s=>`<span class="ev2 p-${s.platform}" onclick="event.stopPropagation();openPost('${s.id}')">${({instagram:"IG",facebook:"FB",tiktok:"TT"})[s.platform]||""} ${new Date(s.scheduled_at).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",hour12:false})}${s.status=="publicado"?" ✓":""}</span>`).join("")}
+
+const PURL={instagram:"https://www.instagram.com/",facebook:"https://www.facebook.com/",tiktok:"https://www.tiktok.com/upload"};
+function duePosts(){const t=today(),lim=plusDays(7);return S.filter(s=>s.scheduled_at&&!["publicado","cancelado"].includes(s.status)&&dkey(new Date(s.scheduled_at))<=lim).sort((a,b)=>a.scheduled_at.localeCompare(b.scheduled_at))}
+function postStrip(){const t=today(),L=duePosts();if(!L.length)return `<div class="empty">Nada por publicar esta semana. Planea algo en 📅 Calendario.</div>`;
+ return L.map(s=>{const k=dkey(new Date(s.scheduled_at)),c=C.find(x=>x.id==s.contact_id),cl=k<t?"over":k==t?"today":"";
+  return `<div class="it ${cl}" onclick="openPost('${s.id}')"><b>${k<t?"Atrasado · ":k==t?"Hoy · ":""}${PLAT[s.platform]} · ${new Date(s.scheduled_at).toLocaleString("es-MX",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</b><br>${s.pillar?PIL[s.pillar]:""}${c?" · "+esc(c.business_name):""} · <span class="pill s-${s.status}" style="padding:1px 7px;font-size:11px">${PST[s.status]}</span><div class="cap">${esc(s.topic||s.hook||s.caption||"Sin texto todavía")}</div></div>`}).join("")}
+function fullText(s){return [s.hook,s.caption,s.cta,s.hashtags].filter(Boolean).join("\n\n")}
+async function copyPost(id){const s=S.find(x=>x.id==id),t=fullText(s);if(!t)return toast("Este post no tiene texto todavía");try{await navigator.clipboard.writeText(t);toast("¡Copiado! 📋")}catch{const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("¡Copiado! 📋")}}
+async function donePost(id){const u=prompt("¡Bien! Pega el link del post publicado (o déjalo vacío):","");if(u===null)return;
+ if(await db.up("social_posts",id,{status:"publicado",published_at:new Date().toISOString(),post_url:u.trim()||S.find(x=>x.id==id).post_url||null})){toast("Marcado como publicado ✅");render();openPost(id)}}
 function renderCal(){const r=new Date(calRef),t=today();let body="",title="";
  if(calMode=="mes"){const first=new Date(r.getFullYear(),r.getMonth(),1),start=new Date(first);start.setDate(1-((first.getDay()+6)%7));title=first.toLocaleDateString("es-MX",{month:"long",year:"numeric"}).replace(/^./,x=>x.toUpperCase());
   body=`<div class="cal">${DW.map(d=>`<div class="dw">${d}</div>`).join("")}${Array.from({length:42},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const k=dkey(d);return `<div class="d ${d.getMonth()!=r.getMonth()?"out":""} ${k==t?"td":""}" onclick="newPost('${k}')"><div class="n">${d.getDate()}</div>${evs(k)}</div>`}).join("")}</div>`}
@@ -324,7 +335,7 @@ function renderCal(){const r=new Date(calRef),t=today();let body="",title="";
   body=`<div class="cal wk">${Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return `<div class="dw">${DW[i]} ${d.getDate()}</div>`}).join("")}${Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const k=dkey(d);return `<div class="d ${k==t?"td":""}" onclick="newPost('${k}')">${evs(k)}</div>`}).join("")}</div>`}
  else{title="Todas las publicaciones";const L=[...S].sort((a,b)=>String(a.scheduled_at||"9").localeCompare(String(b.scheduled_at||"9")));
   body=`<div class="grid plist">${L.length?L.map(s=>{const c=C.find(x=>x.id==s.contact_id);return `<div class="card" onclick="openPost('${s.id}')"><div class="meta" style="margin-top:0"><span class="pill p-${s.platform}">${PLAT[s.platform]||s.platform}</span><span class="pill s-${s.status}">${PST[s.status]}</span></div><h4 style="margin-top:10px">${esc((s.caption||"Sin texto").slice(0,70))}</h4><div class="cat">${fdt(s.scheduled_at)}${s.pillar?" · "+PIL[s.pillar]:""}${c?" · "+esc(c.business_name):""}</div>${s.status=="publicado"&&s.views!=null?`<div class="pk" style="margin-top:6px">👁 ${s.views} · ❤️ ${s.likes??0} · 💬 ${s.comments??0} · 🔁 ${s.shares??0} · 🔖 ${s.saves??0}</div>`:""}</div>`}).join(""):`<div class="soon">Todavía no hay publicaciones. Toca “+ Nueva publicación”.</div>`}</div>`}
- $("#calv").innerHTML=`<div class="next" style="margin-bottom:12px"><h3>ℹ️ Así funciona</h3><div style="font-size:13px;color:var(--mut);line-height:1.5">Aquí planeas tus posts. <b style="color:var(--ink)">No se publica solo</b> en Instagram, Facebook ni TikTok: tú lo subes desde la app o lo programas gratis en Meta Business Suite, y luego lo marcas como Publicado y apuntas sus números.</div></div>
+ $("#calv").innerHTML=`<div class="next" style="margin-bottom:12px"><h3>📣 Hoy toca publicar (y próximos 7 días)</h3><div class="row">${postStrip()}</div></div><div class="next" style="margin-bottom:12px"><h3>ℹ️ Así funciona</h3><div style="font-size:13px;color:var(--mut);line-height:1.5">Aquí planeas tus posts. <b style="color:var(--ink)">No se publica solo</b> en Instagram, Facebook ni TikTok: abres el post, tocas “Copiar texto”, abres el video y la app, publicas tú (o programas gratis en Meta Business Suite) y tocas “Ya lo publiqué”.</div></div>
   <div class="cal-h"><button class="ghost" onclick="calMove(-1)">‹</button><h3>${title}</h3><button class="ghost" onclick="calMove(1)">›</button></div>
   <div class="tools"><select id="calm" style="max-width:none;flex:1"><option value="mes">Mes</option><option value="semana">Semana</option><option value="lista">Lista</option></select><button onclick="newPost('${t}')">+ Nueva publicación</button></div>${body}`;
  $("#calm").value=calMode;$("#calm").onchange=e=>{calMode=e.target.value;renderCal()}}
@@ -334,11 +345,21 @@ function openPost(id,day){const s=id?S.find(x=>x.id==id):{platform:"instagram",s
  const loc=dt?new Date(dt.getTime()-dt.getTimezoneOffset()*6e4).toISOString().slice(0,16):"";
  const opt=(o,v)=>Object.keys(o).map(k=>`<option value="${k}" ${k==v?"selected":""}>${o[k]}</option>`).join("");
  $("#panel").innerHTML=`<div class="top"><h2>${id?"Publicación":"Nueva publicación"}</h2><button class="ghost" onclick="closeC()">✕</button></div>
+ ${id&&s.status!="cancelado"?`<div class="sec"><h3>🚀 Listo para publicar</h3>${s.topic||s.hook?`<div class="why" style="margin-bottom:12px">${s.topic?`<b>${esc(s.topic)}</b><br>`:""}${s.hook?"Gancho: "+esc(s.hook):""}</div>`:""}<div class="pub">
+  <button onclick="copyPost('${s.id}')">📋 Copiar texto</button>${s.asset_url?`<a class="btn alt" style="padding:14px 10px;text-align:center;font-size:15px" href="${esc(s.asset_url)}" target="_blank" rel="noopener">🎬 Abrir video/archivo</a>`:`<button class="alt" disabled style="opacity:.45">🎬 Sin archivo</button>`}
+  <a class="btn alt full" style="padding:14px 10px;text-align:center;font-size:15px" href="${PURL[s.platform]}" target="_blank" rel="noopener">Abrir ${PLAT[s.platform]}</a>
+  ${s.status=="publicado"?`<div class="full pk" style="text-align:center">✅ Publicado ${fdt(s.published_at)}</div>`:`<button class="full" onclick="donePost('${s.id}')">✅ Ya lo publiqué</button>`}</div>
+  <p class="note">Copia el texto, abre el video, publícalo tú en la app y regresa a tocar “Ya lo publiqué”. Aquí no se publica nada solo.</p></div>`:""}
  <div class="sec"><div class="two"><div class="f"><label>Red</label><select id="s_pl">${opt(PLAT,s.platform)}</select></div><div class="f"><label>Estatus</label><select id="s_st">${opt(PST,s.status)}</select></div></div>
  <div class="f"><label>Fecha y hora</label><input type="datetime-local" id="s_dt" value="${loc}"></div>
  <div class="f"><label>Pilar de contenido</label><select id="s_pi"><option value="">—</option>${opt(PIL,s.pillar)}</select></div>
  <div class="f"><label>Cliente (opcional)</label><select id="s_c"><option value="">Magic Box (propio)</option>${C.filter(c=>c.type=="cliente").map(c=>`<option value="${c.id}" ${c.id==s.contact_id?"selected":""}>${esc(c.business_name)}</option>`).join("")}</select></div>
+ <h3 style="margin-top:16px">¿Qué vas a publicar?</h3>
+ <div class="f"><label>Idea / tema</label><input id="s_to" value="${esc(s.topic)}" placeholder="Ej. Así grabamos con dron en la Zona Hotelera"></div>
+ <div class="f"><label>Gancho (primeros 3 segundos)</label><input id="s_ho" value="${esc(s.hook)}" placeholder="Ej. ¿Tu hotel se ve así desde arriba? 👀"></div>
  <div class="f"><label>Texto / caption</label><textarea id="s_ca" style="min-height:110px">${esc(s.caption)}</textarea></div>
+ <div class="f"><label>Llamado a la acción (CTA)</label><input id="s_ct" value="${esc(s.cta)}" placeholder="Ej. Escríbenos por WhatsApp 👉 link en bio"></div>
+ <div class="f"><label>Hashtags</label><input id="s_ht" value="${esc(s.hashtags)}" placeholder="#cancun #marketing #reels"></div>
  <div class="f"><label>Link del material (Drive, video…)</label><input id="s_as" value="${esc(s.asset_url)}" placeholder="https://drive.google.com/…"></div>
  ${s.asset_url||s.post_url?`<div class="ql" style="margin:0 0 10px">${s.asset_url?`<a href="${esc(s.asset_url)}" target="_blank" rel="noopener">Abrir material</a>`:""}${s.post_url?`<a href="${esc(s.post_url)}" target="_blank" rel="noopener">Ver post</a>`:""}</div>`:""}
  <h3 style="margin-top:16px">Después de publicar</h3><div class="f"><label>Link del post publicado</label><input id="s_pu" value="${esc(s.post_url)}" placeholder="https://instagram.com/p/…"></div>
@@ -346,7 +367,7 @@ function openPost(id,day){const s=id?S.find(x=>x.id==id):{platform:"instagram",s
  <div class="acts"><button id="s_ok">💾 Guardar</button>${id?`<button class="ghost" id="s_del">Borrar</button>`:""}</div><p class="note">Recordatorio: guardar aquí no publica nada en tus redes.</p></div>`;
  $("#drawer").classList.add("on");
  $("#s_ok").onclick=async()=>{const n=k=>{const v=$("#s_"+k).value;return v===""?null:Number(v)};const v=$("#s_dt").value;
-  const row={platform:$("#s_pl").value,status:$("#s_st").value,scheduled_at:v?new Date(v).toISOString():null,pillar:$("#s_pi").value||null,contact_id:$("#s_c").value||null,caption:$("#s_ca").value.trim()||null,asset_url:$("#s_as").value.trim()||null,post_url:$("#s_pu").value.trim()||null,views:n("views"),likes:n("likes"),comments:n("comments"),shares:n("shares"),saves:n("saves")};
+  const row={platform:$("#s_pl").value,status:$("#s_st").value,scheduled_at:v?new Date(v).toISOString():null,pillar:$("#s_pi").value||null,contact_id:$("#s_c").value||null,caption:$("#s_ca").value.trim()||null,topic:$("#s_to").value.trim()||null,hook:$("#s_ho").value.trim()||null,cta:$("#s_ct").value.trim()||null,hashtags:$("#s_ht").value.trim()||null,asset_url:$("#s_as").value.trim()||null,post_url:$("#s_pu").value.trim()||null,views:n("views"),likes:n("likes"),comments:n("comments"),shares:n("shares"),saves:n("saves")};
   const ok=id?await db.up("social_posts",id,row):await db.ins("social_posts",row);if(ok){toast("Guardado ✅");closeC();render()}};
  if(id)$("#s_del").onclick=async()=>{if(confirm("¿Borrar esta publicación?")&&await db.del("social_posts",id)){toast("Borrada");closeC();render()}};
 }

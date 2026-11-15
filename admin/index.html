@@ -81,6 +81,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
 .s-idea{background:#222;color:#c9c9c9;border-color:#333}.s-borrador{background:#2e2410;color:#f5c451;border-color:#4a3a18}.s-listo{background:#0c2a27;color:#4fe6d8;border-color:#154540}.pub{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pub button{padding:14px 10px;font-size:15px}.pub .full{grid-column:1/-1}.pub .alt{background:var(--card2);color:var(--ink);border:1px solid var(--line)}.it .cap{color:var(--mut);font-size:12px;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.s-programado{background:#0f1f3a;color:#7cb4ff;border-color:#1c355e}.s-publicado{background:#0f2a18;color:#6ee79a;border-color:#1a4528}.s-cancelado{background:#2e1414;color:#ff8a80;border-color:#4a2020}
 .mx{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.mx input{padding:9px 6px;text-align:center}
 @media(min-width:760px){.dash{grid-template-columns:repeat(4,1fr)}.cal .d{min-height:90px}.cal .ev2{font-size:11px}}
+.rev-stars{color:var(--acc2);letter-spacing:1px;font-size:16px;margin-top:10px}.rev-body{margin-top:8px;font-size:14px;line-height:1.5;color:#d7d7d7;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:640px){.tabs{flex-wrap:wrap}.tabs .tab{flex:1 1 calc(50% - 6px)}}
 
 </style>
 </head>
@@ -127,6 +129,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
     <button class="tab on" data-t="cliente">Clientes <span class="n" id="nc">0</span></button>
     <button class="tab" data-t="prospecto">Prospectos <span class="n" id="np">0</span></button>
     <button class="tab" data-t="calendario">📅 Calendario <span class="n" id="nps">0</span></button>
+    <button class="tab" data-t="resenas">Reseñas <span class="n" id="nr">0</span></button>
   </div>
   <div id="crmv">
     <div class="tools"><input id="q" placeholder="Buscar negocio, contacto, zona…"><select id="fs"></select></div>
@@ -134,6 +137,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
     <div class="grid" id="list"></div>
   </div>
   <div id="calv" hidden></div>
+  <div id="revv" hidden>
+    <div class="tools"><select id="rfs"><option value="pending">Pendientes</option><option value="approved">Aprobadas</option><option value="rejected">Rechazadas</option><option value="">Todas</option></select><button class="ghost" id="rreload" type="button">Recargar</button></div>
+    <div id="rhelp" class="note" style="margin:0 0 12px"></div>
+    <div class="grid" id="rlist"></div>
+  </div>
 </main>
 
 <div id="drawer"><div id="panel"></div></div>
@@ -160,7 +168,7 @@ const fd=d=>d?new Date(d.length==10?d+"T12:00":d).toLocaleDateString("es-MX",{da
 const fdt=d=>d?new Date(d).toLocaleString("es-MX",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"Sin fecha";
 const money=n=>"$"+Math.round(Number(n||0)).toLocaleString("es-MX");
 const uid=()=>"l"+Math.random().toString(36).slice(2);
-let C=[],A=[],P=[],S=[],SET={},AV={},tab="cliente",cur=null,calMode="mes",calRef=new Date();
+let C=[],A=[],P=[],S=[],R=[],SET={},AV={},tab="cliente",cur=null,calMode="mes",calRef=new Date(),reviewsNote="";
 const DEMO=window.__DEMO__;const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",2600)}
 function lmsg(t,ok){const e=$("#lm");e.textContent=t;e.className="msg "+(ok?"ok":"err")}
@@ -203,7 +211,7 @@ async function boot(){
  sb.auth.onAuthStateChange((_e,s)=>{if(!s){$("#app").hidden=true;$("#login").hidden=false;$("#out").hidden=true;$("#me").hidden=true}});
 }
 function gate(u){if((u.email||"").toLowerCase()!==DIEGO){lmsg("Este panel es solo para Diego 🙈 Si eres Diego, entra con tu correo de siempre.");sb.auth.signOut();return}enter()}
-async function enter(){$("#login").hidden=true;$("#app").hidden=false;$("#out").hidden=!!DEMO;$("#me").hidden=false;await db.load();renderMe();render()}
+async function enter(){$("#login").hidden=true;$("#app").hidden=false;$("#out").hidden=!!DEMO;$("#me").hidden=false;await db.load();await loadReviews();renderMe();render()}
 $("#lf").onsubmit=async e=>{e.preventDefault();const em=$("#em").value.trim().toLowerCase();
  if(em!==DIEGO)return lmsg("Ese correo no tiene acceso. Este panel es solo para Diego 🙈");
  $("#lb").disabled=true;lmsg("Entrando…",1);const {data,error}=await sb.auth.signInWithPassword({email:em,password:$("#pw").value});$("#lb").disabled=false;
@@ -238,7 +246,10 @@ function render(){
  const t=today(),lim=plusDays(7),nx=pending().filter(a=>a.next_date<=lim).sort((a,b)=>a.next_date.localeCompare(b.next_date));
  $("#nx").innerHTML=nx.length?nx.map(a=>{const c=C.find(x=>x.id==a.contact_id)||{};const cl=a.next_date<t?"over":a.next_date==t?"today":"";return `<div class="it ${cl}" onclick="openC('${a.contact_id}')"><b>${a.next_date<t?"Atrasado · ":a.next_date==t?"Hoy · ":""}${fd(a.next_date)}</b> · ${esc(c.business_name||"")}<br>${esc(a.next_step||a.summary)}</div>`}).join(""):`<div class="empty">Nada pendiente esta semana. ¡A prospectar! 🚀</div>`;
  $("#nxp").innerHTML=postStrip();$("#nxpw").hidden=tab=="calendario";
- $("#crmv").hidden=tab=="calendario";$("#calv").hidden=tab!="calendario";if(tab=="calendario")return renderCal();
+ $("#crmv").hidden=tab=="calendario"||tab=="resenas";$("#calv").hidden=tab!="calendario";$("#revv").hidden=tab!="resenas";
+ $("#nr").textContent=(R||[]).filter(r=>r.status=="pending").length;
+ if(tab=="calendario")return renderCal();
+ if(tab=="resenas")return renderReviews();
  const fs=$("#fs"),keep=fs.dataset.t==tab?fs.value:"";fs.dataset.t=tab;fs.innerHTML=`<option value="">Todos los estatus</option>`+ST[tab].map(s=>`<option value="${s}">${SL[s]}</option>`).join("");fs.value=keep;
  $("#addc").textContent=tab=="cliente"?"+ Agregar cliente":"+ Agregar prospecto";
  const rows=visible();
@@ -247,8 +258,8 @@ function render(){
 }
 function visible(){const q=$("#q").value.toLowerCase().trim(),f=$("#fs").value;return C.filter(c=>c.type==tab&&(!f||c.status==f)&&(!q||[c.business_name,c.category,c.contact_name,c.zone,c.recommended_package,c.notes,c.email].join(" ").toLowerCase().includes(q)))}
 function jump(s){tab="prospecto";document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.t=="prospecto"));render();$("#fs").value=s;render()}
-document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));b.classList.add("on");tab=b.dataset.t;render()});
-$("#q").oninput=render;$("#fs").onchange=render;
+document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));b.classList.add("on");tab=b.dataset.t;b.scrollIntoView({inline:"nearest",block:"nearest"});render()});
+$("#q").oninput=render;$("#fs").onchange=render;$("#rfs").onchange=()=>{if(tab=="resenas")renderReviews()};$("#rreload").onclick=async()=>{await loadReviews();render();if(!reviewsNote)toast("Reseñas actualizadas")};
 async function setStatus(sel){const c=C.find(x=>x.id==sel.dataset.id),old=c.status;if(old==sel.value)return;if(await db.upd(c.id,{status:sel.value})){await db.act({contact_id:c.id,kind:"nota",summary:`Estatus: ${SL[old]} → ${SL[sel.value]}`});toast("Estatus actualizado ✅")}render();if(cur==c.id)openC(c.id)}
 
 // ---------- CSV ----------
@@ -370,6 +381,33 @@ function openPost(id,day){const s=id?S.find(x=>x.id==id):{platform:"instagram",s
   const row={platform:$("#s_pl").value,status:$("#s_st").value,scheduled_at:v?new Date(v).toISOString():null,pillar:$("#s_pi").value||null,contact_id:$("#s_c").value||null,caption:$("#s_ca").value.trim()||null,topic:$("#s_to").value.trim()||null,hook:$("#s_ho").value.trim()||null,cta:$("#s_ct").value.trim()||null,hashtags:$("#s_ht").value.trim()||null,asset_url:$("#s_as").value.trim()||null,post_url:$("#s_pu").value.trim()||null,views:n("views"),likes:n("likes"),comments:n("comments"),shares:n("shares"),saves:n("saves")};
   const ok=id?await db.up("social_posts",id,row):await db.ins("social_posts",row);if(ok){toast("Guardado ✅");closeC();render()}};
  if(id)$("#s_del").onclick=async()=>{if(confirm("¿Borrar esta publicación?")&&await db.del("social_posts",id)){toast("Borrada");closeC();render()}};
+}
+// ---------- reseñas (tabla public.reviews; no tumba el resto del CRM si aún no existe) ----------
+async function loadReviews(){
+ if(DEMO){R=DEMO.reviews||[];reviewsNote="";return}
+ const {data,error}=await sb.from("reviews").select("id,created_at,name,business,role,rating,body,slug,status").order("created_at",{ascending:false});
+ if(error){R=[];const m=error.message||"";reviewsNote=/schema cache|does not exist|Could not find the table|relation/i.test(m)?"La tabla de reseñas todavía no está en Supabase. Aplica la migración del repo y recarga.":"No pude cargar las reseñas: "+m;console.error(error);return}
+ R=data||[];reviewsNote="";
+}
+function reviewStars(n){n=Math.max(0,Math.min(5,Number(n)||0));return "★★★★★".slice(0,n)+`<span style="opacity:.28">${"★★★★★".slice(n)}</span>`}
+function renderReviews(){
+ const f=$("#rfs").value;
+ $("#rhelp").innerHTML=`Link para WhatsApp. No está en el menú del sitio.<br><button class="ghost" style="margin-top:8px" type="button" onclick="copyReviewLink('https://tmbmagicbox.studio/resena/')">Copiar link</button><div class="pk" style="margin-top:6px">?c=crossforce<br>?c=capitan-reef<br>?c=go-karts-cancun</div>`;
+ if(reviewsNote){$("#rlist").innerHTML=`<div class="soon">${esc(reviewsNote)}</div>`;return}
+ const label={pending:"Pendiente",approved:"Aprobada",rejected:"Rechazada"};
+ const pill={pending:"s-cotizado",approved:"s-cerrado",rejected:"s-perdido"};
+ const rows=R.filter(r=>!f||r.status===f);
+ const empty=f=="pending"?"No hay reseñas pendientes. Cuando un cliente llene el link, aparece aquí.":f=="approved"?"Todavía no hay reseñas aprobadas.":f=="rejected"?"No hay reseñas rechazadas.":"Todavía no llega ninguna reseña.";
+ $("#rlist").innerHTML=rows.length?rows.map(r=>{const id=/^[0-9a-f-]{36}$/i.test(r.id)?r.id:"";return `<div class="card" style="cursor:default"><div class="meta" style="margin-top:0"><span class="pill ${pill[r.status]||""}">${label[r.status]||esc(r.status)}</span><span class="pk">${fd(r.created_at)}</span></div><div class="rev-stars" aria-label="${Number(r.rating)||0} de 5">${reviewStars(r.rating)}</div><h4 style="margin-top:8px">${esc(r.business)}</h4><div class="cat">${esc(r.name)}${r.role?" · "+esc(r.role):""}</div><div class="rev-body">${esc(r.body)}</div>${r.slug?`<div class="pk" style="margin-top:6px">Llegó desde ?c=${esc(r.slug)}</div>`:""}<div class="acts" style="margin-top:12px">${r.status!="approved"?`<button type="button" onclick="setReviewStatus('${id}','approved')">Aprobar</button>`:""}${r.status!="rejected"?`<button class="ghost" type="button" onclick="setReviewStatus('${id}','rejected')">Rechazar</button>`:""}${r.status!="pending"?`<button class="ghost" type="button" onclick="setReviewStatus('${id}','pending')">Volver a pendiente</button>`:""}</div></div>`}).join(""):`<div class="soon">${empty}</div>`;
+}
+async function copyReviewLink(url){try{await navigator.clipboard.writeText(url);toast("Link copiado ✅")}catch{toast(url)}}
+async function setReviewStatus(id,status){
+ if(!/^[0-9a-f-]{36}$/i.test(id))return;
+ const row=R.find(r=>r.id==id);if(!row||row.status==status)return;
+ if(DEMO){row.status=status;toast(status=="approved"?"Reseña aprobada ✅":status=="rejected"?"Reseña rechazada":"Volvió a pendiente");render();return}
+ const {data,error}=await sb.from("reviews").update({status}).eq("id",id).select("id,created_at,name,business,role,rating,body,slug,status").single();
+ if(error){toast("No se guardó: "+error.message);return}
+ Object.assign(row,data);toast(status=="approved"?"Reseña aprobada ✅":status=="rejected"?"Reseña rechazada":"Volvió a pendiente");render();
 }
 if("serviceWorker" in navigator){} // sin service worker: la app siempre carga lo último
 boot();

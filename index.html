@@ -1331,6 +1331,48 @@
       .acc-name { font-size: 0.85rem; }
     }
 
+    /* ════════════ RESEÑAS ════════════ */
+    .reviews-section {
+      padding: 4.25rem 1.25rem 4.5rem;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .reviews-inner { max-width: 720px; margin: 0 auto; }
+
+    .reviews-section .section-header { margin-bottom: 0.5rem; }
+
+    .reviews-list { margin-top: 1.5rem; }
+
+    .review {
+      padding: 1.45rem 0 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .review:last-child { border-bottom: 1px solid rgba(255,255,255,0.08); }
+
+    .review-stars { display: flex; gap: 0.18rem; margin-bottom: 0.75rem; }
+
+    .review-stars svg { width: 14px; height: 14px; fill: rgba(255,255,255,0.16); }
+
+    .review-stars svg.on { fill: var(--teal); }
+
+    .review-body {
+      font-size: 0.98rem;
+      font-weight: 300;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.84);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .review-who { margin-top: 0.85rem; font-size: 0.78rem; color: var(--gray1); }
+
+    .review-who strong { font-weight: 500; color: var(--white); }
+
+    @media (min-width: 900px) {
+      .reviews-section { padding: 7rem 4vw; }
+    }
+
     /* ════════════ REVEAL ════════════ */
     .reveal {
       opacity: 0;
@@ -1782,6 +1824,17 @@
 </section>
 
 <hr class="divider">
+
+<!-- ── RESEÑAS (solo aprobadas; si no hay, no se muestra) ── -->
+<section id="resenas" class="reviews-section" hidden>
+  <div class="reviews-inner">
+    <div class="section-header">
+      <p class="section-label">Clientes</p>
+      <h2 class="section-heading">Lo que dicen<br><strong>nuestros clientes.</strong></h2>
+    </div>
+    <div id="reviewsList" class="reviews-list"></div>
+  </div>
+</section>
 
 <!-- ── CONTACTO ── -->
 <section id="contacto" class="contact-section">
@@ -2812,6 +2865,53 @@
     if (e.key === 'Escape') closePortfolioModal();
   });
 
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  (function () {
+    var section = document.getElementById("resenas");
+    var list = document.getElementById("reviewsList");
+    if (!section || !list || !window.supabase) return;
+
+    var sb = supabase.createClient(
+      "https://sykmmqnevygujsdsyynw.supabase.co",
+      "sb_publishable_NGxuPwPjbplZ28MVp1jKAQ_9NC4sf_T",
+      { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+    );
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+
+    function stars(n) {
+      var html = '<div class="review-stars" role="img" aria-label="' + n + ' de 5 estrellas">';
+      for (var i = 1; i <= 5; i++) {
+        html += '<svg viewBox="0 0 20 20" aria-hidden="true" class="' + (i <= n ? "on" : "") + '"><path d="M10 1.7l2.05 4.42 4.85.66-3.55 3.36.88 4.83L10 12.9l-4.23 2.07.88-4.83L3.1 6.78l4.85-.66L10 1.7z"/></svg>';
+      }
+      return html + "</div>";
+    }
+
+    sb.from("reviews")
+      .select("name,business,rating,body,created_at")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(24)
+      .then(function (result) {
+        var rows = result.data;
+        if (result.error || !rows || !rows.length) return;
+        list.innerHTML = rows.map(function (row) {
+          var rating = Math.min(5, Math.max(1, Number(row.rating) || 0));
+          return '<article class="review">' + stars(rating) +
+            '<p class="review-body">' + esc(row.body) + '</p>' +
+            '<p class="review-who"><strong>' + esc(row.name) + '</strong> · ' + esc(row.business) + '</p></article>';
+        }).join("");
+        section.hidden = false;
+      })
+      .catch(function () {});
+  })();
 </script>
 
 </body>

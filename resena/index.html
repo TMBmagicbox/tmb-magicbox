@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000000">
+  <title>Tu reseña — TMB Magicbox</title>
+  <meta name="description" content="Una reseña corta para TMB Magicbox. Esta página no está en el menú del sitio.">
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #000;
+      --teal: #5F9EA0;
+      --teal-2: #3d7a7c;
+      --white: #fff;
+      --gray: #9a9a9a;
+      --line: rgba(255,255,255,0.1);
+      --bebas: "Bebas Neue", sans-serif;
+      --mont: "Montserrat", sans-serif;
+    }
+    html { background: var(--black); }
+    body {
+      min-height: 100%;
+      background:
+        radial-gradient(ellipse 70% 42% at 50% -8%, rgba(95,158,160,0.22), transparent 62%),
+        var(--black);
+      color: var(--white);
+      font-family: var(--mont);
+      font-weight: 300;
+      line-height: 1.5;
+      padding:
+        max(1.6rem, env(safe-area-inset-top))
+        1.15rem
+        max(2rem, env(safe-area-inset-bottom));
+    }
+    .wrap { width: 100%; max-width: 32rem; margin: 0 auto; }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      margin-bottom: 1.8rem;
+    }
+    .brand svg { width: 54px; height: 62px; filter: drop-shadow(0 0 16px rgba(95,158,160,0.4)); }
+    .brand-name {
+      margin-top: 0.7rem;
+      font-family: var(--bebas);
+      letter-spacing: 0.16em;
+      font-size: 1.45rem;
+    }
+    .brand-sub {
+      margin-top: 0.2rem;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+    h1 {
+      font-family: var(--mont);
+      font-weight: 300;
+      font-size: 1.85rem;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      text-align: center;
+    }
+    h1 strong { font-weight: 600; }
+    .lead {
+      margin: 0.9rem 0 1.6rem;
+      text-align: center;
+      color: var(--gray);
+      font-size: 0.92rem;
+      line-height: 1.65;
+    }
+    form { display: flex; flex-direction: column; gap: 1rem; }
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    label, legend {
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.48);
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      color: var(--white);
+      font: inherit;
+      font-size: 16px;
+      font-weight: 400;
+      padding: 0.85rem 0.9rem;
+      border-radius: 8px;
+      outline: none;
+    }
+    textarea { min-height: 9.5rem; resize: vertical; line-height: 1.55; }
+    input:focus, textarea:focus { border-color: rgba(95,158,160,0.7); }
+    .opt { letter-spacing: 0.12em; text-transform: none; color: rgba(255,255,255,0.32); }
+    .score { border: 0; padding: 0; min-width: 0; }
+    .stars {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: center;
+      margin-top: 0.15rem;
+    }
+    .stars input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .stars label {
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.22);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .stars label::before { content: "★"; font-size: 2.15rem; line-height: 1; }
+    .stars label span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .stars label:hover,
+    .stars label:hover ~ label,
+    .stars input:checked ~ label { color: #8fd4d6; }
+    .stars input:focus-visible + label {
+      outline: 2px solid var(--teal);
+      outline-offset: 2px;
+      border-radius: 10px;
+    }
+    .hint { text-align: center; min-height: 1.2rem; font-size: 0.78rem; color: var(--gray); }
+    .count { text-align: right; font-size: 0.72rem; color: rgba(255,255,255,0.35); }
+    .count.ok { color: var(--teal); }
+    .consent {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      padding: 0.85rem 0.15rem 0.2rem;
+      font-size: 0.86rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.82);
+      cursor: pointer;
+    }
+    .consent input {
+      width: 1.35rem;
+      height: 1.35rem;
+      margin-top: 0.1rem;
+      flex: 0 0 auto;
+      accent-color: var(--teal);
+    }
+    button[type="submit"] {
+      margin-top: 0.35rem;
+      min-height: 52px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--black);
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button[type="submit"]:disabled { opacity: 0.55; cursor: progress; }
+    .msg {
+      min-height: 1.2rem;
+      font-size: 0.84rem;
+      color: #e7b3a2;
+      text-align: center;
+    }
+    .msg a { color: #8fd4d6; }
+    .fine {
+      margin-top: 0.85rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.38);
+    }
+    .hp {
+      position: absolute;
+      left: -10000px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .thanks h1 { margin-bottom: 0.85rem; }
+    .thanks p { text-align: center; color: var(--gray); font-size: 0.95rem; line-height: 1.65; }
+    .socials { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 1.4rem; }
+    .socials a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      background: rgba(255,255,255,0.03);
+    }
+    .socials a span { color: var(--gray); font-weight: 400; font-size: 0.78rem; }
+    .socials a:active { border-color: rgba(95,158,160,0.7); }
+    noscript .msg { display: block; margin-top: 1rem; }
+    @media (max-width: 360px) {
+      .stars label { width: 46px; height: 46px; }
+      .stars label::before { font-size: 1.8rem; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="brand" href="https://tmbmagicbox.studio/">
+      <svg viewBox="0 0 100 115" fill="none" aria-hidden="true">
+        <polygon points="50,2 98,27 98,88 50,113 2,88 2,27" fill="#000" stroke="rgba(255,255,255,0.85)" stroke-width="3"/>
+        <text x="50" y="74" text-anchor="middle" font-family="Bebas Neue, sans-serif" font-size="28" fill="#fff" letter-spacing="2">TMB</text>
+      </svg>
+      <div class="brand-name">TMB MAGICBOX</div>
+      <div class="brand-sub">Crew Studio · Cancún</div>
+    </a>
+
+    <div id="formView">
+      <h1>¿Cómo te fue<br><strong>con nosotros?</strong></h1>
+      <p class="lead">Gracias por el rato de trabajo. Si te late, déjanos unas líneas. Las leemos nosotros y, con tu permiso, las publicamos en el sitio.</p>
+
+      <noscript>
+        <p class="msg">Para enviar la reseña hace falta JavaScript. Si no, escríbenos por <a href="https://wa.me/529985592883">WhatsApp</a>.</p>
+      </noscript>
+
+      <form id="reviewForm" novalidate>
+        <div class="hp" aria-hidden="true">
+          <label for="company_website">Sitio web</label>
+          <input id="company_website" name="company_website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="nombre">Tu nombre</label>
+          <input id="nombre" name="nombre" type="text" autocomplete="name" autocapitalize="words" maxlength="80" required>
+        </div>
+        <div class="field">
+          <label for="empresa">Empresa o negocio</label>
+          <input id="empresa" name="empresa" type="text" autocomplete="organization" autocapitalize="words" maxlength="120" required>
+        </div>
+        <div class="field">
+          <label for="cargo">Cargo <span class="opt">opcional</span></label>
+          <input id="cargo" name="cargo" type="text" autocomplete="organization-title" autocapitalize="words" maxlength="80" placeholder="Dueño, marketing, chef…">
+        </div>
+
+        <fieldset class="score">
+          <legend>Estrellas</legend>
+          <div class="stars" id="stars">
+            <input type="radio" name="rating" id="star5" value="5" required>
+            <label for="star5"><span>5 estrellas</span></label>
+            <input type="radio" name="rating" id="star4" value="4">
+            <label for="star4"><span>4 estrellas</span></label>
+            <input type="radio" name="rating" id="star3" value="3">
+            <label for="star3"><span>3 estrellas</span></label>
+            <input type="radio" name="rating" id="star2" value="2">
+            <label for="star2"><span>2 estrellas</span></label>
+            <input type="radio" name="rating" id="star1" value="1">
+            <label for="star1"><span>1 estrella</span></label>
+          </div>
+          <p class="hint" id="starHint" aria-live="polite">Toca una estrella, de 1 a 5.</p>
+        </fieldset>
+
+        <div class="field">
+          <label for="resena">Tu reseña</label>
+          <textarea id="resena" name="resena" maxlength="800" required placeholder="Qué hicimos juntos y cómo te fue."></textarea>
+          <div class="count" id="count">0 / 800 · mínimo 20</div>
+        </div>
+
+        <label class="consent">
+          <input id="consent" name="consent" type="checkbox" required>
+          <span>Pueden publicar esta reseña, mi nombre y el nombre de mi negocio en tmbmagicbox.studio.</span>
+        </label>
+
+        <p class="msg" id="formMsg" role="status"></p>
+        <button type="submit" id="send">Enviar reseña</button>
+        <p class="fine">No se publica sola. Primero la vemos nosotros.</p>
+      </form>
+    </div>
+
+    <div id="thanks" class="thanks" hidden>
+      <h1>Gracias,<br><strong>de verdad.</strong></h1>
+      <p>Ya quedó con nosotros. La leemos con calma y, si nos diste permiso, la vas a ver en tmbmagicbox.studio.</p>
+      <p style="margin-top:0.8rem">Si quieres seguir lo que vamos haciendo, aquí estamos.</p>
+      <div class="socials">
+        <a href="https://www.instagram.com/tmb.magicbox/" target="_blank" rel="noopener noreferrer">Instagram <span>@tmb.magicbox</span></a>
+        <a href="https://www.facebook.com/profile.php?id=61578789626249" target="_blank" rel="noopener noreferrer">Facebook <span>TMB Magicbox</span></a>
+        <!-- YouTube en el footer del sitio sigue en href="#". No mandamos a un link vacío. -->
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      var URL_SB = "https://sykmmqnevygujsdsyynw.supabase.co";
+      var KEY_SB = "sb_publishable_NGxuPwPjbplZ28MVp1jKAQ_9NC4sf_T";
+      var CLIENTS = {
+        "crossforce": "Crossforce",
+        "capitan-reef": "Capitán Reef",
+        "capitanreef": "Capitán Reef",
+        "go-karts-cancun": "Go Karts Cancún",
+        "gokarts-cancun": "Go Karts Cancún",
+        "go-karts": "Go Karts Cancún"
+      };
+      var COOLDOWN_MS = 45000;
+      var MAX_PER_DAY = 4;
+      var form = document.getElementById("reviewForm");
+      var msg = document.getElementById("formMsg");
+      var send = document.getElementById("send");
+      var body = document.getElementById("resena");
+      var count = document.getElementById("count");
+      var hint = document.getElementById("starHint");
+      var empresa = document.getElementById("empresa");
+      var slug = readSlug();
+
+      if (slug) empresa.value = CLIENTS[slug] || slug.split("-").map(function (w) {
+        return w.charAt(0).toUpperCase() + w.slice(1);
+      }).join(" ");
+
+      document.getElementById("stars").addEventListener("change", function () {
+        var picked = form.querySelector('input[name="rating"]:checked');
+        if (!picked) return;
+        var n = picked.value;
+        hint.textContent = n === "1" ? "1 estrella" : n + " de 5 estrellas";
+      });
+
+      body.addEventListener("input", function () {
+        body.setCustomValidity("");
+        var n = chars(body.value.trim());
+        count.textContent = n + " / 800 · mínimo 20";
+        count.classList.toggle("ok", n >= 20 && n <= 800);
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        submitReview();
+      });
+
+      function readSlug() {
+        var raw = "";
+        try { raw = new URLSearchParams(location.search).get("c") || ""; }
+        catch (e) { return ""; }
+        var value = raw.trim().toLowerCase();
+        if (value.length > 40 || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)) return "";
+        return value;
+      }
+
+      function chars(value) { return Array.from(value).length; }
+
+      function say(text) { msg.innerHTML = text; }
+
+      function rateState() {
+        var day = new Date().toLocaleDateString("en-CA");
+        var state = { day: day, n: 0, at: 0 };
+        try {
+          var saved = JSON.parse(localStorage.getItem("tmb.resena.sent") || "null");
+          if (saved && saved.day === day) state = saved;
+        } catch (e) {}
+        return state;
+      }
+
+      function rateMessage() {
+        var state = rateState();
+        if (Date.now() - state.at < COOLDOWN_MS) {
+          return "Espera un momento antes de mandar otra. Así no se nos duplica.";
+        }
+        if (state.n >= MAX_PER_DAY) {
+          return "Ya recibimos varias desde este teléfono hoy. Si quieres corregir algo, escríbenos por WhatsApp.";
+        }
+        return "";
+      }
+
+      function rememberSend() {
+        try {
+          var state = rateState();
+          state.n += 1;
+          state.at = Date.now();
+          localStorage.setItem("tmb.resena.sent", JSON.stringify(state));
+        } catch (e) {}
+      }
+
+      function showThanks() {
+        document.getElementById("formView").hidden = true;
+        document.getElementById("thanks").hidden = false;
+        window.scrollTo(0, 0);
+      }
+
+      function submitReview() {
+        say("");
+        var honeypot = document.getElementById("company_website").value.trim();
+        if (honeypot) {
+          rememberSend();
+          showThanks();
+          return;
+        }
+
+        ["nombre", "empresa", "cargo", "resena"].forEach(function (id) {
+          var el = document.getElementById(id);
+          el.value = el.value.trim();
+        });
+
+        var name = document.getElementById("nombre").value;
+        var business = empresa.value;
+        var role = document.getElementById("cargo").value;
+        var text = body.value;
+        var rating = form.querySelector('input[name="rating"]:checked');
+        var consent = document.getElementById("consent").checked;
+        var textLen = chars(text);
+
+        body.setCustomValidity("");
+        if (textLen > 0 && textLen < 20) body.setCustomValidity("Cuéntanos un poco más: mínimo 20 caracteres.");
+        if (textLen > 800) body.setCustomValidity("Máximo 800 caracteres.");
+
+        if (!name || name.length < 2) { say("¿Cómo te llamas?"); document.getElementById("nombre").focus(); return; }
+        if (!business || business.length < 2) { say("¿Cuál es el negocio?"); empresa.focus(); return; }
+        if (role && (role.length > 80)) { say("El cargo se nos fue de largo."); return; }
+        if (!rating) { say("Elige de 1 a 5 estrellas."); hint.textContent = "Elige de 1 a 5 estrellas."; return; }
+        if (!form.reportValidity()) return;
+        if (!consent) { say("Necesitamos tu permiso para publicarla."); return; }
+
+        var limited = rateMessage();
+        if (limited) { say(limited); return; }
+        if (!window.supabase) {
+          say('No se pudo abrir el envío. Escríbenos por <a href="https://wa.me/529985592883">WhatsApp</a>.');
+          return;
+        }
+
+        send.disabled = true;
+        send.textContent = "Enviando…";
+
+        var client = supabase.createClient(URL_SB, KEY_SB, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+        var row = {
+          name: name,
+          business: business,
+          role: role || null,
+          rating: Number(rating.value),
+          body: text,
+          consent: true,
+          slug: slug || null
+        };
+
+        client.from("reviews").insert(row).then(function (result) {
+          send.disabled = false;
+          send.textContent = "Enviar reseña";
+          if (result.error) {
+            console.error(result.error);
+            say('No se pudo guardar. Revisa tu conexión o escríbenos por <a href="https://wa.me/529985592883">WhatsApp</a> y lo anotamos.');
+            return;
+          }
+          rememberSend();
+          showThanks();
+        }).catch(function (error) {
+          console.error(error);
+          send.disabled = false;
+          send.textContent = "Enviar reseña";
+          say('No se pudo guardar. Revisa tu conexión o escríbenos por <a href="https://wa.me/529985592883">WhatsApp</a> y lo anotamos.');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

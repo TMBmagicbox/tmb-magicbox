@@ -83,6 +83,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
 @media(min-width:760px){.dash{grid-template-columns:repeat(4,1fr)}.cal .d{min-height:90px}.cal .ev2{font-size:11px}}
 .rev-stars{color:var(--acc2);letter-spacing:1px;font-size:16px;margin-top:10px}.rev-body{margin-top:8px;font-size:14px;line-height:1.5;color:#d7d7d7;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:640px){.tabs{flex-wrap:wrap}.tabs .tab{flex:1 1 calc(50% - 6px)}}
+.vk .kpi em{font-style:normal;color:var(--acc2)}
+.vbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;min-width:0}.vbox h3{margin:0 0 12px;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.vgrid{display:grid;grid-template-columns:1fr;gap:0 12px}@media(min-width:760px){.vgrid{grid-template-columns:1fr 1fr}}
+.vchart{width:100%;height:auto;display:block}.vleg{display:flex;gap:14px;font-size:12px;color:var(--mut);margin-top:6px}.vleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.vt{width:100%;border-collapse:collapse;font-size:14px}.vt th{text-align:left;font-size:11px;color:var(--mut);font-weight:600;padding:0 0 8px}.vt th+th,.vt td+td{text-align:right;width:70px}.vt td{padding:8px 0;border-top:1px solid var(--line);vertical-align:top}.vt td small{display:block;color:#5f5f5f;font-size:11px;overflow-wrap:anywhere}
+.vbar{margin-bottom:9px}.vbl{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:4px}.vbl b{font-weight:600;white-space:nowrap}.vbl small{color:var(--mut);font-weight:500}.vbt{height:6px;background:#1f1f1f;border-radius:99px;overflow:hidden}.vbt i{display:block;height:100%;border-radius:99px}
+.vlast{max-height:420px;overflow-y:auto}.vrow{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px;flex-wrap:wrap}.vrow:first-child{border-top:0}.vrow b{font-weight:600}.vrow small{display:block;color:var(--mut);font-size:12px}
+.vtags{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-start}.vtag{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--card2);border:1px solid #333;white-space:nowrap}
 
 </style>
 </head>
@@ -130,6 +138,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
     <button class="tab" data-t="prospecto">Prospectos <span class="n" id="np">0</span></button>
     <button class="tab" data-t="calendario">📅 Calendario <span class="n" id="nps">0</span></button>
     <button class="tab" data-t="resenas">Reseñas <span class="n" id="nr">0</span></button>
+    <button class="tab" data-t="visitas">📈 Visitas <span class="n" id="nv">0</span></button>
   </div>
   <div id="crmv">
     <div class="tools"><input id="q" placeholder="Buscar negocio, contacto, zona…"><select id="fs"></select></div>
@@ -141,6 +150,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
     <div class="tools"><select id="rfs"><option value="pending">Pendientes</option><option value="approved">Aprobadas</option><option value="rejected">Rechazadas</option><option value="">Todas</option></select><button class="ghost" id="rreload" type="button">Recargar</button></div>
     <div id="rhelp" class="note" style="margin:0 0 12px"></div>
     <div class="grid" id="rlist"></div>
+  </div>
+  <div id="visv" hidden>
+    <div class="tools"><select id="vpage" aria-label="Página" style="flex:1;max-width:none"></select><button class="ghost" id="vreload" type="button">Recargar</button></div>
+    <div id="vbody"></div>
   </div>
 </main>
 
@@ -211,7 +224,8 @@ async function boot(){
  sb.auth.onAuthStateChange((_e,s)=>{if(!s){$("#app").hidden=true;$("#login").hidden=false;$("#out").hidden=true;$("#me").hidden=true}});
 }
 function gate(u){if((u.email||"").toLowerCase()!==DIEGO){lmsg("Este panel es solo para Diego 🙈 Si eres Diego, entra con tu correo de siempre.");sb.auth.signOut();return}enter()}
-async function enter(){$("#login").hidden=true;$("#app").hidden=false;$("#out").hidden=!!DEMO;$("#me").hidden=false;await db.load();await loadReviews();renderMe();render()}
+async function enter(){try{localStorage.setItem("tmb_admin","1")}catch(e){} // así track.js no cuenta las visitas de Diego
+ $("#login").hidden=true;$("#app").hidden=false;$("#out").hidden=!!DEMO;$("#me").hidden=false;await db.load();await loadReviews();renderMe();render();loadVisits().then(render)}
 $("#lf").onsubmit=async e=>{e.preventDefault();const em=$("#em").value.trim().toLowerCase();
  if(em!==DIEGO)return lmsg("Ese correo no tiene acceso. Este panel es solo para Diego 🙈");
  $("#lb").disabled=true;lmsg("Entrando…",1);const {data,error}=await sb.auth.signInWithPassword({email:em,password:$("#pw").value});$("#lb").disabled=false;
@@ -246,10 +260,11 @@ function render(){
  const t=today(),lim=plusDays(7),nx=pending().filter(a=>a.next_date<=lim).sort((a,b)=>a.next_date.localeCompare(b.next_date));
  $("#nx").innerHTML=nx.length?nx.map(a=>{const c=C.find(x=>x.id==a.contact_id)||{};const cl=a.next_date<t?"over":a.next_date==t?"today":"";return `<div class="it ${cl}" onclick="openC('${a.contact_id}')"><b>${a.next_date<t?"Atrasado · ":a.next_date==t?"Hoy · ":""}${fd(a.next_date)}</b> · ${esc(c.business_name||"")}<br>${esc(a.next_step||a.summary)}</div>`}).join(""):`<div class="empty">Nada pendiente esta semana. ¡A prospectar! 🚀</div>`;
  $("#nxp").innerHTML=postStrip();$("#nxpw").hidden=tab=="calendario";
- $("#crmv").hidden=tab=="calendario"||tab=="resenas";$("#calv").hidden=tab!="calendario";$("#revv").hidden=tab!="resenas";
- $("#nr").textContent=(R||[]).filter(r=>r.status=="pending").length;
+ $("#crmv").hidden=tab=="calendario"||tab=="resenas"||tab=="visitas";$("#calv").hidden=tab!="calendario";$("#revv").hidden=tab!="resenas";$("#visv").hidden=tab!="visitas";
+ $("#nr").textContent=(R||[]).filter(r=>r.status=="pending").length;$("#nv").textContent=visitsLoaded?(V||[]).filter(r=>vday(r.created_at)==vday(new Date())).length:"…";
  if(tab=="calendario")return renderCal();
  if(tab=="resenas")return renderReviews();
+ if(tab=="visitas")return renderVisits();
  const fs=$("#fs"),keep=fs.dataset.t==tab?fs.value:"";fs.dataset.t=tab;fs.innerHTML=`<option value="">Todos los estatus</option>`+ST[tab].map(s=>`<option value="${s}">${SL[s]}</option>`).join("");fs.value=keep;
  $("#addc").textContent=tab=="cliente"?"+ Agregar cliente":"+ Agregar prospecto";
  const rows=visible();
@@ -259,7 +274,7 @@ function render(){
 function visible(){const q=$("#q").value.toLowerCase().trim(),f=$("#fs").value;return C.filter(c=>c.type==tab&&(!f||c.status==f)&&(!q||[c.business_name,c.category,c.contact_name,c.zone,c.recommended_package,c.notes,c.email].join(" ").toLowerCase().includes(q)))}
 function jump(s){tab="prospecto";document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.t=="prospecto"));render();$("#fs").value=s;render()}
 document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));b.classList.add("on");tab=b.dataset.t;b.scrollIntoView({inline:"nearest",block:"nearest"});render()});
-$("#q").oninput=render;$("#fs").onchange=render;$("#rfs").onchange=()=>{if(tab=="resenas")renderReviews()};$("#rreload").onclick=async()=>{await loadReviews();render();if(!reviewsNote)toast("Reseñas actualizadas")};
+$("#q").oninput=render;$("#fs").onchange=render;$("#rfs").onchange=()=>{if(tab=="resenas")renderReviews()};$("#vpage").onchange=()=>{if(tab=="visitas")renderVisits()};$("#vreload").onclick=async()=>{visitsLoaded=false;renderVisits();await loadVisits();render();if(!visitsNote)toast("Visitas actualizadas")};$("#rreload").onclick=async()=>{await loadReviews();render();if(!reviewsNote)toast("Reseñas actualizadas")};
 async function setStatus(sel){const c=C.find(x=>x.id==sel.dataset.id),old=c.status;if(old==sel.value)return;if(await db.upd(c.id,{status:sel.value})){await db.act({contact_id:c.id,kind:"nota",summary:`Estatus: ${SL[old]} → ${SL[sel.value]}`});toast("Estatus actualizado ✅")}render();if(cur==c.id)openC(c.id)}
 
 // ---------- CSV ----------
@@ -382,6 +397,69 @@ function openPost(id,day){const s=id?S.find(x=>x.id==id):{platform:"instagram",s
   const ok=id?await db.up("social_posts",id,row):await db.ins("social_posts",row);if(ok){toast("Guardado ✅");closeC();render()}};
  if(id)$("#s_del").onclick=async()=>{if(confirm("¿Borrar esta publicación?")&&await db.del("social_posts",id)){toast("Borrada");closeC();render()}};
 }
+// ---------- visitas (tabla public.page_views, la llena /assets/track.js) ----------
+const TZ="America/Cancun";
+const PN={"/":"Inicio","/arknag/":"Arkna G","/djbarbas/":"DJ Barbas","/resena/":"Reseña","/links/":"Links",
+ "/p/sweet-ice/":"Sweet Ice","/p/capitan-reef/":"Capitán Reef","/p/crossforce/":"Crossforce","/p/cancun-bodas/":"Cancún Bodas","/p/cancun-inmuebles/":"Cancún Inmuebles",
+ "/p/casa-tortugas/":"Casa Tortugas","/p/chef-cristian/":"Chef Cristian","/p/el-deli/":"El Deli","/p/hive/":"HIVE Cancún","/p/mezcal-hotel/":"Mezcal Hotel",
+ "/p/su-casa-cancun/":"Su Casa Cancún","/p/suenos-de-vida/":"Sueños de Vida","/p/zoah-775/":"ZOAH 775"};
+const SRC={google:"🔎 Google",instagram:"📸 Instagram",facebook:"👍 Facebook",whatsapp:"💬 WhatsApp",tiktok:"🎵 TikTok",directo:"🔗 Directo",otro:"🌐 Otro"};
+const SRCC={google:"#7cb4ff",instagram:"#ff8fd0",facebook:"#5b8cff",whatsapp:"#6ee79a",tiktok:"#4fe6d8",directo:"#c9c9c9",otro:"#f5c451"};
+const DEV={movil:"📱 Celular",tablet:"📲 Tablet",compu:"💻 Compu"};
+let V=[],visitsNote="",visitsLoaded=false;
+const pname=p=>PN[p]||(/^\/p\/[^/]+\/$/.test(p)?"Landing · "+p.slice(3,-1):p);
+const vday=d=>new Date(d).toLocaleDateString("en-CA",{timeZone:TZ});
+const vwhen=d=>new Date(d).toLocaleString("es-MX",{timeZone:TZ,day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+const vdayLabel=k=>new Date(k+"T12:00").toLocaleDateString("es-MX",{day:"numeric",month:"short"});
+function vdays(n){const out=[],t=new Date(vday(new Date())+"T12:00");for(let i=n-1;i>=0;i--){const d=new Date(t);d.setDate(t.getDate()-i);out.push(d.toLocaleDateString("en-CA"))}return out}
+async function loadVisits(){
+ if(DEMO){V=DEMO.visits||[];visitsNote="";visitsLoaded=true;return}
+ const since=new Date(Date.now()-32*864e5).toISOString(),rows=[];
+ for(let from=0;from<50000;from+=1000){
+  const {data,error}=await sb.from("page_views").select("created_at,page,referrer_host,source,device,country,city,lang,session_id").gte("created_at",since).order("created_at",{ascending:false}).range(from,from+999);
+  if(error){V=[];const m=error.message||"";visitsNote=/schema cache|does not exist|Could not find the table|relation/i.test(m)?"La tabla de visitas todavía no está en Supabase.":"No pude cargar las visitas: "+m;console.error(error);visitsLoaded=true;return}
+  rows.push(...(data||[]));if(!data||data.length<1000)break}
+ V=rows;visitsNote="";visitsLoaded=true}
+function vcount(rows){return {v:rows.length,s:new Set(rows.map(r=>r.session_id)).size}}
+function vbars(list,total,colorOf){return list.map(([k,label,n])=>{const pct=total?Math.round(n*100/total):0;return `<div class="vbar"><div class="vbl"><span>${label}</span><b>${n.toLocaleString("es-MX")} <small>${pct}%</small></b></div><div class="vbt"><i style="width:${Math.max(pct,2)}%;background:${colorOf?colorOf(k):"var(--acc)"}"></i></div></div>`}).join("")}
+function vgroup(rows,key){const m=new Map();rows.forEach(r=>{const k=key(r);if(k==null)return;m.set(k,(m.get(k)||0)+1)});return [...m].sort((a,b)=>b[1]-a[1])}
+function vchart(rows){
+ const days=vdays(30),byV=new Map(days.map(k=>[k,0])),byS=new Map(days.map(k=>[k,new Set()]));
+ rows.forEach(r=>{const k=vday(r.created_at);if(byV.has(k)){byV.set(k,byV.get(k)+1);byS.get(k).add(r.session_id)}});
+ const max=Math.max(4,...byV.values()),W=innerWidth<640?360:600,H=innerWidth<640?200:170,pb=22,pt=10,bw=W/30;
+ const nice=Math.ceil(max/4)*4,y=v=>pt+(H-pt-pb)*(1-v/nice);
+ let g="";for(let i=0;i<=4;i++){const v=nice*i/4,yy=y(v);g+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="#222" stroke-width="1"/><text x="2" y="${yy-3}" fill="#6a6a6a" font-size="11">${v}</text>`}
+ const bars=days.map((k,i)=>{const v=byV.get(k),s=byS.get(k).size,x=i*bw+bw*.18,w=bw*.64;
+  return `<g><title>${vdayLabel(k)}: ${v} visitas · ${s} sesiones</title><rect x="${x}" y="${y(v)}" width="${w}" height="${Math.max(0,H-pb-y(v))}" rx="2" fill="#19d3c5" opacity=".35"/><rect x="${x+w*.2}" y="${y(s)}" width="${w*.6}" height="${Math.max(0,H-pb-y(s))}" rx="2" fill="#3fe0d3"/>${(29-i)%7==0?`<text x="${i==0?0:i==29?W:x+w/2}" y="${H-5}" fill="#8a8a8a" font-size="12" text-anchor="${i==0?"start":i==29?"end":"middle"}">${vdayLabel(k)}</text>`:""}</g>`}).join("");
+ return `<svg viewBox="0 0 ${W} ${H}" class="vchart" role="img" aria-label="Visitas por día, últimos 30 días">${g}${bars}</svg><div class="vleg"><span><i style="background:#19d3c5;opacity:.35"></i>Visitas</span><span><i style="background:#3fe0d3"></i>Sesiones únicas</span></div>`}
+function renderVisits(){
+ const sel=$("#vpage"),keep=sel.value;
+ const seen=new Set(V.map(r=>r.page)),fixed=["/","/arknag/","/djbarbas/"],landings=[...new Set([...Object.keys(PN).filter(p=>p.startsWith("/p/")),...[...seen].filter(p=>p.startsWith("/p/"))])].sort((a,b)=>pname(a).localeCompare(pname(b),"es")),rest=[...new Set(["/resena/","/links/",...seen])].filter(p=>!fixed.includes(p)&&!p.startsWith("/p/")).sort();
+ sel.innerHTML=`<option value="">Todas las páginas</option><optgroup label="Sitio">${fixed.map(p=>`<option value="${esc(p)}">${esc(pname(p))}</option>`).join("")}</optgroup><optgroup label="Landings">${landings.map(p=>`<option value="${esc(p)}">${esc(pname(p))}</option>`).join("")}</optgroup><optgroup label="Otras">${rest.map(p=>`<option value="${esc(p)}">${esc(pname(p))}</option>`).join("")}</optgroup>`;
+ sel.value=[...sel.options].some(o=>o.value==keep)?keep:"";
+ const box=$("#vbody");
+ if(!visitsLoaded){box.innerHTML=`<div class="soon">Cargando visitas…</div>`;return}
+ if(visitsNote){box.innerHTML=`<div class="soon">${esc(visitsNote)}</div>`;return}
+ const f=sel.value,rows=f?V.filter(r=>r.page==f):V,d30=vdays(30),d7=new Set(d30.slice(-7)),t=d30[29],in30=new Set(d30);
+ const r30=rows.filter(r=>in30.has(vday(r.created_at))),r7=r30.filter(r=>d7.has(vday(r.created_at))),rt=r7.filter(r=>vday(r.created_at)==t);
+ const k=(lbl,c)=>`<div class="kpi"><b>${c.v.toLocaleString("es-MX")}</b><span>${lbl} · <em>${c.s.toLocaleString("es-MX")} sesiones</em></span></div>`;
+ const kpis=`<div class="dash vk">${k("Visitas hoy",vcount(rt))}${k("Visitas 7 días",vcount(r7))}${k("Visitas 30 días",vcount(r30))}<div class="kpi"><b>${r30.length?(r30.length/Math.max(1,vcount(r30).s)).toFixed(1):"0"}</b><span>Páginas por sesión (30 días)</span></div></div>`;
+ if(!r30.length){box.innerHTML=kpis+`<div class="soon">Todavía no hay visitas${f?" en "+esc(pname(f)):""} en los últimos 30 días. En cuanto alguien entre, aparecen aquí 👀</div>`;return}
+ const pages=vgroup(r30,r=>r.page).slice(0,12).map(([p,n])=>{const s=new Set(r30.filter(r=>r.page==p).map(r=>r.session_id)).size;return `<tr><td>${esc(pname(p))}<small>${esc(p)}</small></td><td>${n}</td><td>${s}</td></tr>`}).join("");
+ const srcs=vgroup(r30,r=>r.source||"otro").map(([s,n])=>[s,SRC[s]||esc(s),n]);
+ const refs=vgroup(r30.filter(r=>r.source=="otro"&&r.referrer_host),r=>r.referrer_host).slice(0,6);
+ const devs=vgroup(r30,r=>r.device||"compu").map(([s,n])=>[s,DEV[s]||esc(s),n]);
+ const ctry=vgroup(r30,r=>r.country||"Sin dato").slice(0,8).map(([s,n])=>[s,esc(s),n]);
+ const cities=vgroup(r30.filter(r=>r.city),r=>r.city+(r.country?", "+r.country:"")).slice(0,10).map(([s,n])=>[s,esc(s),n]);
+ const last=rows.slice(0,40).map(r=>`<div class="vrow"><div><b>${esc(pname(r.page))}</b><small>${esc(vwhen(r.created_at))}</small></div><div class="vtags"><span class="vtag" style="border-color:${SRCC[r.source]||"#333"}">${SRC[r.source]||esc(r.source)}</span><span class="vtag">${DEV[r.device]||esc(r.device)}</span>${r.city||r.country?`<span class="vtag">📍 ${esc(r.city||r.country)}</span>`:""}</div></div>`).join("");
+ box.innerHTML=kpis+`<div class="vbox"><h3>📈 Últimos 30 días${f?" · "+esc(pname(f)):""}</h3>${vchart(r30)}</div>
+ <div class="vgrid">
+  <div class="vbox"><h3>🏆 Páginas más vistas</h3><table class="vt"><thead><tr><th>Página</th><th>Visitas</th><th>Sesiones</th></tr></thead><tbody>${pages}</tbody></table></div>
+  <div class="vbox"><h3>🧭 De dónde llegan</h3>${vbars(srcs,r30.length,s=>SRCC[s]||"var(--acc)")}${refs.length?`<p class="note">Otros sitios: ${refs.map(([h,n])=>esc(h)+" ("+n+")").join(", ")}</p>`:""}<h3 style="margin-top:16px">📱 Dispositivo</h3>${vbars(devs,r30.length)}</div>
+  <div class="vbox"><h3>🌎 Países</h3>${vbars(ctry,r30.length,()=>"#b9a2ff")}<h3 style="margin-top:16px">📍 Ciudades</h3>${cities.length?vbars(cities,r30.length,()=>"#f5c451"):`<p class="note">Sin ciudades todavía.</p>`}</div>
+  <div class="vbox"><h3>🕒 Últimas visitas</h3><div class="vlast">${last}</div></div>
+ </div><p class="note">Horas en hora de Cancún. Ciudad y país son aproximados (por la red del visitante, sin guardar IPs). Tus visitas desde este navegador no cuentan.</p>`}
+
 // ---------- reseñas (tabla public.reviews; no tumba el resto del CRM si aún no existe) ----------
 async function loadReviews(){
  if(DEMO){R=DEMO.reviews||[];reviewsNote="";return}

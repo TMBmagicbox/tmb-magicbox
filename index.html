@@ -1434,7 +1434,9 @@
       transition: border-color .35s ease, background .35s ease;
     }
     .client-cell img {
-      display: block; height: auto; max-height: 70%;
+      /* Siempre proporcionado: solo topes máximos, ancho/alto automáticos */
+      display: block; width: auto; height: auto;
+      max-width: 60%; max-height: 70%; object-fit: contain;
       opacity: 0.72; transition: opacity .35s ease, transform .35s ease;
     }
     .client-cell:hover { border-color: rgba(95,158,160,0.45); background: rgba(95,158,160,0.06); }
@@ -1925,9 +1927,8 @@ const CLIENTES = [
     // Tamaño óptico parejo: logos anchos más anchos, logos cuadrados más chicos
     img.onload = function () {
       const ar = img.naturalWidth / img.naturalHeight || 1;
-      img.style.width = Math.min(86, 50 * Math.sqrt(ar)) + '%';
+      img.style.maxWidth = Math.min(86, 50 * Math.sqrt(ar)) + '%';
     };
-    img.style.width = '60%';
     if (c.url) {
       const a = document.createElement('a');
       a.href = c.url; a.setAttribute('aria-label', c.nombre);

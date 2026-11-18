@@ -1331,46 +1331,82 @@
       .acc-name { font-size: 0.85rem; }
     }
 
-    /* ════════════ RESEÑAS ════════════ */
+    /* ════════════ RESEÑAS (carrusel, mismo lenguaje visual que Portafolio de clientes) ════════════ */
     .reviews-section {
-      padding: 4.25rem 1.25rem 4.5rem;
+      padding: 4.25rem 0 4.5rem;
       border-top: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
     }
 
-    .reviews-inner { max-width: 720px; margin: 0 auto; }
-
-    .reviews-section .section-header { margin-bottom: 0.5rem; }
-
-    .reviews-list { margin-top: 1.5rem; }
-
-    .review {
-      padding: 1.45rem 0 1.5rem;
-      border-top: 1px solid rgba(255,255,255,0.08);
+    .reviews-section .section-header {
+      margin: 0 auto 2.75rem;
+      padding: 0 4vw;
     }
 
-    .review:last-child { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .reviews-slider.slider-outer {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
 
-    .review-stars { display: flex; gap: 0.18rem; margin-bottom: 0.75rem; }
+    .reviews-slider.slider-outer::-webkit-scrollbar { display: none; }
+
+    .reviews-slider .slide-card {
+      scroll-snap-align: start;
+      width: 400px;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .reviews-slider .slide-info {
+      border-top: none;
+      padding: 1.55rem 1.6rem 1.7rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .reviews-slider .slide-name {
+      font-weight: 600;
+    }
+
+    .reviews-slider .slide-desc {
+      font-size: 0.88rem;
+      line-height: 1.65;
+      margin-top: 0.95rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: var(--gray1);
+    }
+
+    .review-stars { display: flex; gap: 0.18rem; margin: 0.7rem 0 0; }
 
     .review-stars svg { width: 14px; height: 14px; fill: rgba(255,255,255,0.16); }
 
     .review-stars svg.on { fill: var(--teal); }
 
-    .review-body {
-      font-size: 0.98rem;
-      font-weight: 300;
-      line-height: 1.7;
-      color: rgba(255,255,255,0.84);
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
+    .reviews-slider.is-fit::before,
+    .reviews-slider.is-fit::after { display: none; }
+
+    .reviews-slider.is-fit .slider-track {
+      width: 100%;
+      justify-content: center;
     }
 
-    .review-who { margin-top: 0.85rem; font-size: 0.78rem; color: var(--gray1); }
-
-    .review-who strong { font-weight: 500; color: var(--white); }
-
     @media (min-width: 900px) {
-      .reviews-section { padding: 7rem 4vw; }
+      .reviews-section { padding: 7rem 0; }
+    }
+
+    @media (max-width: 600px) {
+      .reviews-slider .slide-card { width: min(400px, calc(100vw - 4.5rem)); }
+      .reviews-slider.slider-outer::before,
+      .reviews-slider.slider-outer::after { width: 48px; }
+      .reviews-slider .slider-arrow.prev { left: 0.4rem; }
+      .reviews-slider .slider-arrow.next { right: 0.4rem; }
     }
 
     /* ════════════ REVEAL ════════════ */
@@ -1536,6 +1572,23 @@
 </div>
 
 <hr class="divider">
+
+<!-- ── RESEÑAS (solo aprobadas; si no hay, no se muestra) ── -->
+<section id="resenas" class="reviews-section" hidden>
+  <div class="section-header">
+    <p class="section-label">Clientes</p>
+    <h2 class="section-heading">Lo que dicen<br><strong>nuestros clientes.</strong></h2>
+  </div>
+  <div class="slider-outer reviews-slider" id="reviewsSlider">
+    <button type="button" class="slider-arrow prev" id="reviewsPrev" aria-label="Anterior" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+    </button>
+    <button type="button" class="slider-arrow next" id="reviewsNext" aria-label="Siguiente" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+    </button>
+    <div class="slider-track" id="reviewsList"></div>
+  </div>
+</section>
 
 <!-- ── FEATURES SLIDER ── -->
 <section class="features-section">
@@ -1824,17 +1877,6 @@
 </section>
 
 <hr class="divider">
-
-<!-- ── RESEÑAS (solo aprobadas; si no hay, no se muestra) ── -->
-<section id="resenas" class="reviews-section" hidden>
-  <div class="reviews-inner">
-    <div class="section-header">
-      <p class="section-label">Clientes</p>
-      <h2 class="section-heading">Lo que dicen<br><strong>nuestros clientes.</strong></h2>
-    </div>
-    <div id="reviewsList" class="reviews-list"></div>
-  </div>
-</section>
 
 <!-- ── CONTACTO ── -->
 <section id="contacto" class="contact-section">
@@ -2894,21 +2936,107 @@
       return html + "</div>";
     }
 
+    function eyebrow(row) {
+      var role = (row.role || "").trim();
+      var business = (row.business || "").trim();
+      if (role && business) return esc(role) + " · " + esc(business);
+      return esc(role || business);
+    }
+
+    function cardHTML(row) {
+      var rating = Math.min(5, Math.max(0, Number(row.rating) || 0));
+      var cat = eyebrow(row);
+      var html = '<article class="slide-card"><div class="slide-info">';
+      if (cat) html += '<div class="slide-cat">' + cat + '</div>';
+      html += '<div class="slide-name">' + esc(row.name) + '</div>';
+      html += stars(rating);
+      html += '<p class="slide-desc">' + esc(row.body) + '</p>';
+      html += '</div></article>';
+      return html;
+    }
+
+    function initReviewsCarousel() {
+      var outer = document.getElementById("reviewsSlider");
+      var prev = document.getElementById("reviewsPrev");
+      var next = document.getElementById("reviewsNext");
+      if (!outer || !list) return;
+
+      var autoTimer = null;
+
+      function cardStep() {
+        var card = list.querySelector(".slide-card");
+        if (!card) return 424;
+        var styles = window.getComputedStyle(list);
+        var gap = parseFloat(styles.columnGap || styles.gap) || 24;
+        return card.offsetWidth + gap;
+      }
+
+      function canScroll() {
+        return outer.scrollWidth > outer.clientWidth + 8;
+      }
+
+      function updateUI() {
+        var overflow = canScroll();
+        var count = list.querySelectorAll(".slide-card").length;
+        outer.classList.toggle("is-fit", !overflow);
+        var show = overflow && count > 1;
+        if (prev) prev.hidden = !show;
+        if (next) next.hidden = !show;
+        if (!show) stopAuto();
+      }
+
+      function move(dir) {
+        var max = Math.max(0, outer.scrollWidth - outer.clientWidth);
+        if (max <= 0) return;
+        var cur = outer.scrollLeft;
+        var nextPos;
+        if (dir > 0 && cur >= max - 8) nextPos = 0;
+        else if (dir < 0 && cur <= 8) nextPos = max;
+        else nextPos = Math.max(0, Math.min(max, cur + dir * cardStep()));
+        outer.scrollTo({ left: nextPos, behavior: "smooth" });
+      }
+
+      function stopAuto() {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+      }
+
+      function startAuto() {
+        stopAuto();
+        if (!canScroll() || list.querySelectorAll(".slide-card").length < 3) return;
+        autoTimer = setInterval(function () { move(1); }, 5000);
+      }
+
+      if (prev) prev.addEventListener("click", function () { stopAuto(); move(-1); setTimeout(startAuto, 6000); });
+      if (next) next.addEventListener("click", function () { stopAuto(); move(1); setTimeout(startAuto, 6000); });
+      outer.addEventListener("scroll", updateUI, { passive: true });
+      outer.addEventListener("pointerenter", stopAuto);
+      outer.addEventListener("pointerleave", startAuto);
+      outer.addEventListener("touchstart", stopAuto, { passive: true });
+      window.addEventListener("resize", function () { updateUI(); startAuto(); });
+      updateUI();
+      startAuto();
+    }
+
+    function showRows(rows) {
+      if (!rows || !rows.length) {
+        // Sin reseñas: la sección se queda oculta, sin contenido inventado.
+        return;
+      }
+      list.innerHTML = rows.map(cardHTML).join("");
+      section.hidden = false;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(initReviewsCarousel);
+      });
+    }
+
     sb.from("reviews")
-      .select("name,business,rating,body,created_at")
+      .select("name,business,role,rating,body,created_at")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(24)
       .then(function (result) {
-        var rows = result.data;
-        if (result.error || !rows || !rows.length) return;
-        list.innerHTML = rows.map(function (row) {
-          var rating = Math.min(5, Math.max(1, Number(row.rating) || 0));
-          return '<article class="review">' + stars(rating) +
-            '<p class="review-body">' + esc(row.body) + '</p>' +
-            '<p class="review-who"><strong>' + esc(row.name) + '</strong> · ' + esc(row.business) + '</p></article>';
-        }).join("");
-        section.hidden = false;
+        if (result.error) return;
+        showRows(result.data);
       })
       .catch(function () {});
   })();

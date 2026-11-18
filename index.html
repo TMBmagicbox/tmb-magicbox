@@ -1411,6 +1411,37 @@
       .reviews-slider .slider-arrow.next { right: 0.4rem; }
     }
 
+
+    /* ════════════ CLIENTES (logos) ════════════ */
+    .clients-section {
+      padding: 6rem 4vw;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .clients-section .section-header { margin: 0 auto 3rem; }
+    .clients-grid {
+      --cols: 5; --gap: 1rem;
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: var(--gap);
+      max-width: 1200px; margin: 0 auto; padding: 0; list-style: none;
+    }
+    .client-cell {
+      flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
+      aspect-ratio: 16 / 10;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      transition: border-color .35s ease, background .35s ease;
+    }
+    .client-cell img {
+      display: block; height: auto; max-height: 70%;
+      opacity: 0.72; transition: opacity .35s ease, transform .35s ease;
+    }
+    .client-cell:hover { border-color: rgba(95,158,160,0.45); background: rgba(95,158,160,0.06); }
+    .client-cell:hover img { opacity: 1; transform: scale(1.04); }
+    @media (max-width: 900px) { .clients-grid { --cols: 3; } }
+    @media (max-width: 560px) { .clients-grid { --cols: 2; --gap: .75rem; } .clients-section { padding: 4.5rem 5vw; } }
+
     /* ════════════ REVEAL ════════════ */
     .reveal {
       opacity: 0;
@@ -1840,6 +1871,56 @@
     </div>
   </div>
 </section>
+
+<hr class="divider">
+
+<!-- ── CLIENTES (logos en blanco) ── -->
+<section id="clientes" class="clients-section">
+  <div class="section-header reveal">
+    <p class="section-label">Clientes</p>
+    <h2 class="section-heading">Marcas que<br><strong>confían en nosotros.</strong></h2>
+  </div>
+  <ul class="clients-grid reveal" id="clientsGrid" aria-label="Logos de clientes"></ul>
+</section>
+<script>
+/* ── CLIENTES ──
+   Para agregar un cliente:
+   1) Sube su logo en blanco con fondo transparente (PNG) a /assets/clientes/
+   2) Agrega una línea aquí: { nombre: 'Nombre de la marca', logo: 'archivo-blanco.png' },
+   El orden de la lista es el orden en la página. La cuadrícula se acomoda sola
+   (5 columnas en compu, 3 en tablet, 2 en celular). */
+const CLIENTES = [
+  { nombre: 'Sweet Ice by Choli\'s',       logo: 'sweet-ice-blanco.png' },
+  { nombre: 'Choli\'s Baguettes',          logo: 'cholis-baguettes-blanco.png' },
+  { nombre: 'Don Chile',                    logo: 'don-chile-blanco.png' },
+  { nombre: 'Xcalak Hotel Boutique',        logo: 'xcalak-hotel-boutique-blanco.png' },
+  { nombre: 'Endemik Mayan Hardwoods',      logo: 'endemik-blanco.png' },
+  { nombre: 'Belen\'s Body Sculpting',     logo: 'belens-body-sculpting-blanco.png' },
+  { nombre: 'abitia diseño y construcción', logo: 'abitia-blanco.png' },
+  { nombre: 'Makro Signs',                  logo: 'makro-signs-blanco.png' },
+  { nombre: 'Imprime Digital',              logo: 'imprime-digital-blanco.png' },
+];
+(function () {
+  const grid = document.getElementById('clientsGrid');
+  if (!grid) return;
+  CLIENTES.forEach(function (c) {
+    const li = document.createElement('li');
+    li.className = 'client-cell';
+    const img = new Image();
+    img.src = '/assets/clientes/' + c.logo;
+    img.alt = c.nombre; img.title = c.nombre;
+    img.loading = 'lazy'; img.decoding = 'async';
+    // Tamaño óptico parejo: logos anchos más anchos, logos cuadrados más chicos
+    img.onload = function () {
+      const ar = img.naturalWidth / img.naturalHeight || 1;
+      img.style.width = Math.min(86, 50 * Math.sqrt(ar)) + '%';
+    };
+    img.style.width = '60%';
+    li.appendChild(img);
+    grid.appendChild(li);
+  });
+})();
+</script>
 
 <hr class="divider">
 

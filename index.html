@@ -1446,6 +1446,20 @@
     @media (max-width: 760px) { .clients-grid { --cols: 3; } }
     .client-cell > a { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
     @media (max-width: 560px) { .clients-grid { --cols: 2; --gap: .75rem; } .clients-section { padding: 4.5rem 5vw; } }
+    /* Celular: carrusel vertical de 3 en 3 que sube solo (se activa por JS; con "reducir movimiento" queda la cuadrícula fija) */
+    .clients-viewport { max-width: 1300px; margin: 0 auto; }
+    @keyframes clientsUp { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+    @media (max-width: 760px) {
+      .clients-viewport.is-marquee {
+        height: var(--clients-h, 300px); overflow: hidden;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 15%, #000 85%, transparent 100%);
+                mask-image: linear-gradient(to bottom, transparent 0, #000 15%, #000 85%, transparent 100%);
+      }
+      .clients-viewport.is-marquee .clients-grid { --cols: 3; --gap: .75rem; padding-bottom: var(--gap); }
+      .clients-viewport.is-marquee .clients-track { animation: clientsUp var(--clients-dur, 30s) linear infinite; will-change: transform; }
+      .clients-viewport.is-marquee:hover .clients-track,
+      .clients-viewport.is-marquee.is-paused .clients-track { animation-play-state: paused; }
+    }
 
     /* ════════════ REVEAL ════════════ */
     .reveal {
@@ -1514,6 +1528,19 @@
       .pi-cat { font-size: 0.5rem; letter-spacing: 0.14em; }
       .pi-name { font-size: 0.72rem; }
       .features-section .slide-card { width: min(300px, calc(100vw - 4.5rem)); }
+    }
+    /* ════ Celular: carruseles centrados (tarjeta activa al centro, vecinas asomando igual a cada lado) ════ */
+    @media (max-width: 600px) {
+      .features-section .slider-track { padding: 0; }
+      .features-section .slide-card { width: min(300px, calc(100vw - 6.5rem)); }
+      .features-section .slider-outer::before,
+      .features-section .slider-outer::after { width: 28px; }
+      .features-section .slider-arrow.prev { left: 0.4rem; }
+      .features-section .slider-arrow.next { right: 0.4rem; }
+      .reviews-slider .slide-card { width: min(400px, calc(100vw - 6.5rem)); scroll-snap-align: center; }
+      .reviews-slider .slider-track { padding: 0 calc((100% - min(400px, calc(100vw - 6.5rem))) / 2); }
+      .reviews-slider.slider-outer::before,
+      .reviews-slider.slider-outer::after { width: 28px; }
     }
   </style>
 </head>
@@ -1938,7 +1965,11 @@
     <p class="section-label">Clientes</p>
     <h2 class="section-heading">Marcas que<br><strong>confían en nosotros.</strong></h2>
   </div>
-  <ul class="clients-grid reveal" id="clientsGrid" aria-label="Logos de clientes"></ul>
+  <div class="clients-viewport reveal" id="clientsViewport">
+    <div class="clients-track" id="clientsTrack">
+      <ul class="clients-grid" id="clientsGrid" aria-label="Logos de clientes"></ul>
+    </div>
+  </div>
 </section>
 <script>
 /* ── CLIENTES ──
@@ -1947,7 +1978,8 @@
    2) Agrega una línea aquí: { nombre: 'Nombre de la marca', logo: 'archivo-blanco.png' },
       (opcional) url: '/pagina/' para que el logo sea un link.
    El orden de la lista es el orden en la página. La cuadrícula se acomoda sola
-   (7 columnas en compu grande, 6 en compu, 4 en laptop chica, 3 en tablet, 2 en celular;
+   (7 columnas en compu grande, 6 en compu, 4 en laptop chica/tablet;
+   en celular, hasta 760px, es un carrusel vertical de 3 en 3 que sube solo;
    si la última fila queda incompleta, se centra). */
 const CLIENTES = [
   { nombre: 'Sweet Ice by Choli\'s',       logo: 'sweet-ice-blanco.png' },
@@ -1981,13 +2013,15 @@ const CLIENTES = [
 (function () {
   const grid = document.getElementById('clientsGrid');
   if (!grid) return;
-  CLIENTES.forEach(function (c) {
+  const track = document.getElementById('clientsTrack');
+  const viewport = document.getElementById('clientsViewport');
+  function makeItem(c, hidden) {
     const li = document.createElement('li');
     li.className = 'client-cell';
     const img = new Image();
     img.src = '/assets/clientes/' + c.logo;
-    img.alt = c.nombre; img.title = c.nombre;
-    img.loading = 'lazy'; img.decoding = 'async';
+    img.alt = hidden ? '' : c.nombre; img.title = c.nombre;
+    img.decoding = 'async';
     // Tamaño óptico parejo: logos anchos más anchos, logos cuadrados más chicos
     img.onload = function () {
       const ar = img.naturalWidth / img.naturalHeight || 1;
@@ -1996,12 +2030,57 @@ const CLIENTES = [
     if (c.url) {
       const a = document.createElement('a');
       a.href = c.url; a.setAttribute('aria-label', c.nombre);
+      if (hidden) a.tabIndex = -1;
       a.appendChild(img); li.appendChild(a);
     } else {
       li.appendChild(img);
     }
-    grid.appendChild(li);
+    return li;
+  }
+  CLIENTES.forEach(function (c) { grid.appendChild(makeItem(c, false)); });
+
+  // ── Celular: carrusel vertical de 3 en 3, de abajo hacia arriba, sin fin ──
+  // Se duplica la lista (copia oculta para lectores de pantalla) y se desliza -50%.
+  const mqMobile = window.matchMedia('(max-width: 760px)');
+  const mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let clone = null;
+  function size() {
+    if (!clone) return;
+    const cell = grid.querySelector('.client-cell');
+    if (!cell) return;
+    const gap = parseFloat(getComputedStyle(grid).rowGap) || 12;
+    const rowH = cell.getBoundingClientRect().height + gap;
+    const rows = Math.ceil(CLIENTES.length / 3);
+    viewport.style.setProperty('--clients-h', Math.round(rowH * 3.5) + 'px');
+    viewport.style.setProperty('--clients-dur', (rows * 2.6).toFixed(1) + 's');
+  }
+  function setup() {
+    const on = mqMobile.matches && !mqReduce.matches && track && viewport;
+    if (on && !clone) {
+      clone = document.createElement('ul');
+      clone.className = 'clients-grid';
+      clone.setAttribute('aria-hidden', 'true');
+      CLIENTES.forEach(function (c) { clone.appendChild(makeItem(c, true)); });
+      track.appendChild(clone);
+      viewport.classList.add('is-marquee');
+      requestAnimationFrame(size);
+    } else if (!on && clone) {
+      clone.remove(); clone = null;
+      viewport.classList.remove('is-marquee', 'is-paused');
+    }
+  }
+  if (viewport) {
+    let t;
+    viewport.addEventListener('touchstart', function () { clearTimeout(t); viewport.classList.add('is-paused'); }, { passive: true });
+    ['touchend', 'touchcancel'].forEach(function (ev) {
+      viewport.addEventListener(ev, function () { clearTimeout(t); t = setTimeout(function () { viewport.classList.remove('is-paused'); }, 1200); }, { passive: true });
+    });
+  }
+  [mqMobile, mqReduce].forEach(function (mq) {
+    if (mq.addEventListener) mq.addEventListener('change', setup); else if (mq.addListener) mq.addListener(setup);
   });
+  window.addEventListener('resize', size);
+  setup();
 })();
 </script>
 
@@ -2725,13 +2804,30 @@ const CLIENTES = [
     // Total de tarjetas únicas (la mitad del track duplicado)
     function totalW() { return track.scrollWidth / 2; }
 
+    // Celular: la tarjeta activa va centrada, con la anterior y la siguiente asomando
+    const MQ_MOBILE = window.matchMedia('(max-width: 600px)');
+    function nCards() { return Math.max(1, Math.floor(track.querySelectorAll('.slide-card').length / 2)); }
+    function centerShift() {
+      const card = track.querySelector('.slide-card');
+      const outer = track.parentElement;
+      return card ? (outer.clientWidth - card.offsetWidth) / 2 : 0;
+    }
+
     function setOffset(x, animate) {
       track.style.transition = animate ? 'transform 0.42s cubic-bezier(0.4,0,0.2,1)' : 'none';
-      track.style.transform = `translateX(${x}px)`;
+      // En celular se pinta desde la 2a copia, para que siempre haya tarjeta a ambos lados
+      const vis = MQ_MOBILE.matches ? x - nCards() * cardW() + centerShift() : x;
+      track.style.transform = `translateX(${vis}px)`;
       offset = x;
     }
 
     function clamp() {
+      if (MQ_MOBILE.matches) {
+        const n = nCards(), cw = cardW(), lo = -(n - Math.floor(n / 2) - 1) * cw - 2, hi = Math.floor(n / 2) * cw + 2;
+        if (offset < lo) setOffset(offset + n * cw, false);
+        if (offset > hi) setOffset(offset - n * cw, false);
+        return;
+      }
       const half = totalW();
       if (offset <= -half) { setOffset(offset + half, false); }
       if (offset > 0)      { setOffset(offset - half, false); }
@@ -2807,6 +2903,12 @@ const CLIENTES = [
       clearTimeout(window._wheelEnd);
       window._wheelEnd = setTimeout(startAuto, 4000);
     }, { passive: false });
+
+    // Al cambiar tamaño/orientación, realinear a una tarjeta completa
+    function realign() { const cw = cardW(); setOffset(Math.round(offset / cw) * cw, false); clamp(); }
+    window.addEventListener('resize', realign);
+    if (MQ_MOBILE.addEventListener) MQ_MOBILE.addEventListener('change', realign);
+    setOffset(offset, false);
 
     startAuto();
   })();

@@ -1343,7 +1343,9 @@
       padding: 0 4vw;
     }
 
-    .reviews-slider.slider-outer {
+    .reviews-slider.slider-outer { overflow: hidden; }
+
+    .reviews-scroll {
       overflow-x: auto;
       overflow-y: hidden;
       scrollbar-width: none;
@@ -1352,7 +1354,7 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    .reviews-slider.slider-outer::-webkit-scrollbar { display: none; }
+    .reviews-scroll::-webkit-scrollbar { display: none; }
 
     .reviews-slider .slide-card {
       scroll-snap-align: start;
@@ -1586,7 +1588,7 @@
     <button type="button" class="slider-arrow next" id="reviewsNext" aria-label="Siguiente" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
     </button>
-    <div class="slider-track" id="reviewsList"></div>
+    <div class="reviews-scroll" id="reviewsScroll"><div class="slider-track" id="reviewsList"></div></div>
   </div>
 </section>
 
@@ -2956,10 +2958,11 @@
     }
 
     function initReviewsCarousel() {
-      var outer = document.getElementById("reviewsSlider");
+      var box = document.getElementById("reviewsSlider");
+      var outer = document.getElementById("reviewsScroll");
       var prev = document.getElementById("reviewsPrev");
       var next = document.getElementById("reviewsNext");
-      if (!outer || !list) return;
+      if (!box || !outer || !list) return;
 
       var autoTimer = null;
 
@@ -2978,7 +2981,7 @@
       function updateUI() {
         var overflow = canScroll();
         var count = list.querySelectorAll(".slide-card").length;
-        outer.classList.toggle("is-fit", !overflow);
+        box.classList.toggle("is-fit", !overflow);
         var show = overflow && count > 1;
         if (prev) prev.hidden = !show;
         if (next) next.hidden = !show;
@@ -3009,8 +3012,8 @@
       if (prev) prev.addEventListener("click", function () { stopAuto(); move(-1); setTimeout(startAuto, 6000); });
       if (next) next.addEventListener("click", function () { stopAuto(); move(1); setTimeout(startAuto, 6000); });
       outer.addEventListener("scroll", updateUI, { passive: true });
-      outer.addEventListener("pointerenter", stopAuto);
-      outer.addEventListener("pointerleave", startAuto);
+      box.addEventListener("pointerenter", stopAuto);
+      box.addEventListener("pointerleave", startAuto);
       outer.addEventListener("touchstart", stopAuto, { passive: true });
       window.addEventListener("resize", function () { updateUI(); startAuto(); });
       updateUI();

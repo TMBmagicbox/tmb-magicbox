@@ -1419,7 +1419,7 @@
     }
     .clients-section .section-header { margin: 0 auto 3rem; }
     .clients-grid {
-      --cols: 5; --gap: 1rem;
+      --cols: 6; --gap: 1rem;
       display: flex; flex-wrap: wrap; justify-content: center;
       gap: var(--gap);
       max-width: 1200px; margin: 0 auto; padding: 0; list-style: none;
@@ -1439,7 +1439,9 @@
     }
     .client-cell:hover { border-color: rgba(95,158,160,0.45); background: rgba(95,158,160,0.06); }
     .client-cell:hover img { opacity: 1; transform: scale(1.04); }
-    @media (max-width: 900px) { .clients-grid { --cols: 3; } }
+    @media (max-width: 1100px) { .clients-grid { --cols: 4; } }
+    @media (max-width: 760px) { .clients-grid { --cols: 3; } }
+    .client-cell > a { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
     @media (max-width: 560px) { .clients-grid { --cols: 2; --gap: .75rem; } .clients-section { padding: 4.5rem 5vw; } }
 
     /* ════════════ REVEAL ════════════ */
@@ -1887,8 +1889,10 @@
    Para agregar un cliente:
    1) Sube su logo en blanco con fondo transparente (PNG) a /assets/clientes/
    2) Agrega una línea aquí: { nombre: 'Nombre de la marca', logo: 'archivo-blanco.png' },
+      (opcional) url: '/pagina/' para que el logo sea un link.
    El orden de la lista es el orden en la página. La cuadrícula se acomoda sola
-   (5 columnas en compu, 3 en tablet, 2 en celular). */
+   (6 columnas en compu, 4 en laptop chica, 3 en tablet, 2 en celular;
+   si la última fila queda incompleta, se centra). */
 const CLIENTES = [
   { nombre: 'Sweet Ice by Choli\'s',       logo: 'sweet-ice-blanco.png' },
   { nombre: 'Choli\'s Baguettes',          logo: 'cholis-baguettes-blanco.png' },
@@ -1899,6 +1903,8 @@ const CLIENTES = [
   { nombre: 'abitia diseño y construcción', logo: 'abitia-blanco.png' },
   { nombre: 'Makro Signs',                  logo: 'makro-signs-blanco.png' },
   { nombre: 'Imprime Digital',              logo: 'imprime-digital-blanco.png' },
+  { nombre: 'DJ Barbas',                    logo: 'dj-barbas-blanco.png', url: '/djbarbas/' },
+  { nombre: 'Arkna G',                      logo: 'arkna-g-blanco.png',   url: '/arknag/' },
 ];
 (function () {
   const grid = document.getElementById('clientsGrid');
@@ -1916,7 +1922,13 @@ const CLIENTES = [
       img.style.width = Math.min(86, 50 * Math.sqrt(ar)) + '%';
     };
     img.style.width = '60%';
-    li.appendChild(img);
+    if (c.url) {
+      const a = document.createElement('a');
+      a.href = c.url; a.setAttribute('aria-label', c.nombre);
+      a.appendChild(img); li.appendChild(a);
+    } else {
+      li.appendChild(img);
+    }
     grid.appendChild(li);
   });
 })();
